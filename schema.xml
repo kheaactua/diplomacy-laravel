@@ -82,11 +82,20 @@
 		<column name="game_id" type="integer" />
 		<column name="territory_id" type="integer" primaryKey="true" autoIncrement="true" />
 
+		<column name="name" type="varchar" size="100" required="true" />
+
 		<column name="type" type="enum" valueSet="land,water" default="land" />
 		<column name="is_supply"  type="char" size="1" default="0" description="True (1) if this territory is a supply base" />
 
+		<!-- Initial state -->
+		<column name="ini_occupier_id" type="varchar" size="10" description="Initial occupying empire" />
+		<column name="ini_unit" type="enum" valueSet="army,fleet,none" description="Occupying unit.  Only none if occpupier_id is empty." />
+
 		<foreign-key foreignTable="game" onDelete="CASCADE">
 			<reference local="game_id" foreign="game_id" />
+		</foreign-key>
+		<foreign-key foreignTable="empire" phpName="InitialOccupier" refPhpName="InitialOccupier" onDelete="CASCADE">
+			<reference local="ini_occupier_id" foreign="empire_id" />
 		</foreign-key>
 	</table>
 
@@ -107,7 +116,7 @@
 		<foreign-key foreignTable="territory" onDelete="CASCADE">
 			<reference local="territory_id" foreign="territory_id" />
 		</foreign-key>
-		<foreign-key foreignTable="empire" onDelete="CASCADE">
+		<foreign-key foreignTable="empire" phpName="Occupier" refPhpName="Occupier" onDelete="CASCADE">
 			<reference local="occupier_id" foreign="empire_id" />
 		</foreign-key>
 	</table>
