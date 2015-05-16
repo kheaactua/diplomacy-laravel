@@ -3,8 +3,9 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Territory as BaseTerritory;
-use DiplomacyEngine\Territory\iTerritory;
+use DiplomacyEngine\Territories\iTerritory;
 use DiplomacyEngine\Empires\Unit;
+use DiplomacyEngine\Empires\iEmpire;
 
 //use DiplomacyEngine\Territory\Neighbours;
 
@@ -80,7 +81,7 @@ class Territory extends BaseTerritory implements iTerritory {
 		return $this->state->getUnit();
 	}
 
-	public function setOccupier(Empire $occupier, Unit $unit) {
+	public function setOccupier(iEmpire $occupier, Unit $unit) {
 		if (is_null($this->state)) trigger_error("Territory state is not set.  Use ::setState()");
 
 		$this->state->setOccupier($occupier);
@@ -111,7 +112,11 @@ class Territory extends BaseTerritory implements iTerritory {
 			trigger_error("Attempted to set invalid territory type: $type");
 		}
 	}
+	public function getType() { return parent::getType(); }
 
+	public function addNeighbour(iTerritory $neighbour) { trigger_error("Not implemented."); }
+	public function addNeighbours(array $neighbours) { trigger_error("Not implemented."); }
+	public function getNeighbours() { trigger_error("Not implemented."); }
 	/*
 	public function addNeighbour(iTerritory $neighbour) {
 		if (!array_key_exists($neighbour->getId(), $this->neighbours)) {
@@ -131,12 +136,8 @@ class Territory extends BaseTerritory implements iTerritory {
 	}
 
 	/** @return bool Has Supply center */
-	/*
-	public function hasSupplyCenter() { return $this->is_supply; }
-	public function setSupplyCenter($hasSupply) {
-		$this->is_supply = $hasSupply;
-	}
-	*/
+	public function getIsSupplyCenter() { return parent::getIsSupplyCenter(); }
+	public function setIsSupplyCenter($hasSupply) { return parent::setIsSupplyCenter($hasSuppy); }
 
 	/**
 	 * Responsible for the initial loading of a territory into the game (not
@@ -177,7 +178,6 @@ class Territory extends BaseTerritory implements iTerritory {
 			->findTerritoryByName($name)
 		;
 	}
-
 
 }
 
