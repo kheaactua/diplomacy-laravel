@@ -17,12 +17,13 @@ use DiplomacyEngine\Empires\iEmpire;
  */
 class Empire extends BaseEmpire implements iEmpire {
 
-	public function __construct($id, $name_official, $name_long, $name_short) {
-		parent::__construct();
-		$this->setEmpireId($id);
-		$this->setNameOfficial($name_official);
-		$this->setNameLong($name_long);
-		$this->setNameShort($name_short);
+	public static function create($id, $name_official, $name_long, $name_short) {
+		$o = new Empire;
+		$o->setEmpireId($id);
+		$o->setNameOfficial($name_official);
+		$o->setNameLong($name_long);
+		$o->setNameShort($name_short);
+		return $o;
 	}
 
 	public function __toString() {
@@ -33,19 +34,6 @@ class Empire extends BaseEmpire implements iEmpire {
 		return $this->getId();
 	}
 
-	/**
-	 * Reads in a JSON object with all the empires defined.
-	 * [{id: 'CAN', name_official: 'Canada', name_long: 'Dominion of Canada', name_short: 'Canada' }, ...]
-	 */
-	public static function loadEmpires(array $objs) {
-		//print_r($objs);
-		$empires = array();
-		foreach ($objs as $obj) {
-			$t = new Empire($obj->id, $obj->name_official, $obj->name_long, $obj->name_short);
-			$empires[$t->getEmpireId()] = $t;
-		}
-		return $empires;
-	}
 
 }
 
