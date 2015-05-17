@@ -40,7 +40,7 @@ class TerritoryTemplate extends BaseTerritoryTemplate {
 	}
 
 	public function __toString() {
-		return sprintf('[%1s] %s', $this->isLand()?'L':'W', $this->getName());
+		return sprintf('(%1s)%s', $this->isLand()?'L':'W', $this->getName());
 	}
 
 	/** @return bool Check if $this is land */

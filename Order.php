@@ -137,7 +137,7 @@ class Move extends Order {
 	public function __toString() {
 		$str = $this->generateOrder(
 			array('empire', 'unit', 'cmd', 'source', 'dest'),
-			array($this->getEmpire(), new Unit($this->unit), $this->cmd, $this->source->getTerritory(), $this->dest->getTerritory())
+			array("[". str_pad($this->getEmpire(),10)."]", new Unit($this->unit), $this->cmd, $this->source->getTerritory(), $this->dest->getTerritory())
 		);
 
 		return $str;
@@ -177,7 +177,7 @@ class Support extends Order {
 	public function __toString() {
 		$str = $this->generateOrder(
 			array('empire', 'aly', 'unit', 'cmd', 'source', 'dest'),
-			array($this->empire, $this->aly, $this->unit->__toString(), $this->cmd, $this->source, $this->dest)
+			array("[". str_pad($this->getEmpire(),10)."]", $this->aly, new Unit($this->unit), $this->cmd, $this->source->getTerritory(), $this->dest->getTerritory())
 		);
 
 		return $str;
