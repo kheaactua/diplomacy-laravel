@@ -31,7 +31,7 @@ class State extends BaseState {
 		if (!is_null($occupier)) {
 			$o->setOccupation($occupier, $unit);
 		}
-		print "State of $territory, initial occupier: $occupier\n";
+		$o->save();
 
 		return $o;
 	}

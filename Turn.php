@@ -96,19 +96,28 @@ class Turn extends BaseTurn implements iTurn {
 		}
 	}
 
-	/** Iterates through the list of orders, and removes any order
-	 * who's source territory is the attack destination of another
-	 * empire. */
+	/**
+	 * Iterates through the list of orders, and removes any order
+	 * whose source territory is the attack destination of another
+	 * empire.
+	 *
+	 * Motivation: If Ontario wants to attack New York, but Quebec attacks
+	 *   Ontario, Ontario's attack order is canceled.
+	 *
+	 * TODO Put in exception for convoys
+	 * */
 	protected function removeOrdersFromAttackedTerritories() {
-		foreach ($this->orders as &$order) {
+		$orders = $this->getOrders();
+		foreach ($orders as &$order) {
 			if ($order->failed()) continue;
-			foreach ($this->orders as $ref) {
+			foreach ($orders as $ref) {
 				if ($ref->failed()) continue;
 				if ($order == $ref) continue;
 
 				if (
-					$order->source == $ref->dest
+					$order->source->getTerritory() == $ref->dest->getTerritory()
 					&& $order->supporting() != $ref->supporting
+					// TODO convoy exception
 				) {
 					$order->fail("Source territory (". $order->source .") is being acted on by ". $ref->getEmpire() . " in '". $ref . "'");
 				}
@@ -124,8 +133,9 @@ class Turn extends BaseTurn implements iTurn {
 	 */
 	protected function getActiveTerritories() {
 		$ret = array();
-		foreach ($this->orders as $o) {
-			$ts = $o->territories();
+		$orders = $this->getOrders();
+		foreach ($orders as $o) {
+			$ts = $o->getTerritories();
 			$ret = array_merge($ret, $ts);
 		}
 		return $ret;
@@ -269,7 +279,8 @@ class Turn extends BaseTurn implements iTurn {
 
 	public function printOrders() {
 		$str = "Orders:\n";
-		foreach ($this->orders as $o) {
+		$orders = $this->getOrders();
+		foreach ($orders as $o) {
 			$str .= str_pad($o, 40) . ($o->failed()?'FAIL':'PASS') . "\n";
 			if ($o->failed()) {
 				$transcript = $o->getTranscript();

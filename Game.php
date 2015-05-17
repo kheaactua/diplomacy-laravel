@@ -34,7 +34,7 @@ class Game extends BaseGame {
 		//print_r($objs);
 		//$empires = array();
 		foreach ($objs as $obj) {
-			$t = Empire::create($obj->id, $obj->name_official, $obj->name_long, $obj->name_short);
+			$t = Empire::create($this, $obj->id, $obj->name_official, $obj->name_long, $obj->name_short);
 			$this->addEmpire($t);
 		}
 		$this->save();

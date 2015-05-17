@@ -17,12 +17,14 @@ use DiplomacyEngine\Empires\iEmpire;
  */
 class Empire extends BaseEmpire implements iEmpire {
 
-	public static function create($abbr, $name_official, $name_long, $name_short) {
+	public static function create(Game $game, $abbr, $name_official, $name_long, $name_short) {
 		$o = new Empire;
+		$o->setGame($game);
 		$o->setAbbr($abbr);
 		$o->setName($name_official);
 		$o->setNameLong($name_long);
 		$o->setNameShort($name_short);
+		$o->save();
 		return $o;
 	}
 

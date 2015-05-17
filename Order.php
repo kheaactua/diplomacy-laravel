@@ -75,13 +75,15 @@ abstract class Order extends BaseOrder {
 	/** Marks the order as failed */
 	public function fail($reason='') {
 		if (strlen($reason))
-			$this->setTranscript($this->getTranscript . "\n" . $reason);
+			$this->setTranscript($this->getTranscript() . "\n" . $reason);
 		$this->setStatus('failed');
 	}
 
 	/**
 	 * Function to return the empire being supported by this order.
 	 * This will typically be the empire, except for in support orders.
+	 *
+	 * @return Empire
 	 */
 	public function supporting() {
 		return $this->getEmpire();
@@ -92,14 +94,16 @@ abstract class Order extends BaseOrder {
 
 		// Does the empire own the source territory
 // TODO make exception for CONVOYS
-		if ($this->source->getOccupier() != $this->empire) {
-			$this->fail($this->getEmpire() . " does not occupy $this->source");
+		if ($this->source->getOccupier() != $this->getEmpire()) {
+			$this->fail($this->getEmpire() . " does not occupy ". $this->source->getTerritory());
 		}
 	}
 
 	/**
 	 * Return a list of territories that are involved
 	 * in this order.
+	 *
+	 * @return array(State, ...)
 	 **/
 	public function getTerritories() {
 		return array($this->source, $this->dest);
@@ -112,17 +116,18 @@ class Move extends Order {
 	/** The command assoiated with this order */
 	public $cmd = "MOVE";
 
-	public static function create(
-		Unit    $unit,
+	/**
+	 * Create unsaved (NS=No Save) order
+	 */
+	public static function createNS(
 		Empire  $empire,
+		Unit    $unit,
 		State   $source,
 		State   $dest
 	) {
 		$o = new Move;
-		$o->setMatch($match);
-		$o->setTurn($turn);
 		$o->setEmpire($empire);
-		$o->setUnit($unit);
+		$o->setUnit($unit->enum());
 
 		$o->source = $source;
 		$o->dest = $dest;
@@ -132,7 +137,7 @@ class Move extends Order {
 	public function __toString() {
 		$str = $this->generateOrder(
 			array('empire', 'unit', 'cmd', 'source', 'dest'),
-			array($this->empire, $this->unit->__toString(), $this->cmd, $this->source, $this->dest)
+			array($this->getEmpire(), new Unit($this->unit), $this->cmd, $this->source->getTerritory(), $this->dest->getTerritory())
 		);
 
 		return $str;
@@ -146,18 +151,19 @@ class Support extends Order {
 	/** The command assoiated with this order */
 	public $cmd = "SUPPORT";
 
-	public static function create(
-		Unit    $unit,
+	/**
+	 * Create unsaved (NS=No Save) order
+	 */
+	public static function createNS(
 		Empire  $empire,
 		Empire  $aly,
+		Unit    $unit,
 		State   $source,
 		State   $dest
 	) {
 		$o = new Support;
-		$o->setMatch($match);
-		$o->setTurn($turn);
 		$o->setEmpire($empire);
-		$o->setUnit($unit);
+		$o->setUnit($unit->enum());
 
 		$o->source = $source;
 		$o->dest = $dest;
