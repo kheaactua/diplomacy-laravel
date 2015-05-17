@@ -16,8 +16,8 @@ use DiplomacyEngine\Turns\iTurn;
  *
  */
 class Turn extends BaseTurn implements iTurn {
-	public const dt = 2; // Timesteps per year.  Half of this is hard programmed in (Seasons)
-	
+	const dt = 2; // Timesteps per year.  Half of this is hard programmed in (Seasons)
+
 	// /** Array representing the territories (but not Territory objects) used
 	//  * to help resolve the fate of the Territory objects. */
 	// protected $territories;
@@ -28,13 +28,15 @@ class Turn extends BaseTurn implements iTurn {
 	 * @param iMatch The match being played
 	 * @param iTurn Last turn in match, null if this is the first turn
 	 **/
-	public statuc function create(Match $match, iTurn $last_turn = null) {
+	public static function create(Match $match, iTurn $last_turn = null) {
 		$o = new Turn;
 		$o->setMatch($match);
 
 		if ($last_turn instanceof iTurn) {
-			$this->setStep($last_turn->step+1);
+			$o->setStep($last_turn->step+1);
 		}
+		$o->save();
+		return $o;
 	}
 
 	public function isSpring() {
@@ -74,7 +76,8 @@ class Turn extends BaseTurn implements iTurn {
 	 * */
 	protected function validateOrders() {
 		$sources = array();
-		foreach ($this->orders as &$o) {
+		$orders = $this->getOrders();
+		foreach ($orders as &$o) {
 			$o->validate();
 
 			if ($o->failed()) continue;

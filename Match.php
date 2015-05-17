@@ -3,6 +3,7 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Match as BaseMatch;
+use DiplomacyEngine\Empires\Unit;
 
 /**
  * Skeleton subclass for representing a row from the 'match' table.
@@ -15,8 +16,10 @@ use DiplomacyOrm\Base\Match as BaseMatch;
  *
  */
 class Match extends BaseMatch {
-	protected $seasons;
-	protected $seasons;
+
+	// Pointer to current turn
+	protected $currentTurn;
+
 	/**
 	 * New match.
 	 * @param $name Name of the match/map
@@ -25,21 +28,20 @@ class Match extends BaseMatch {
 	 **/
 	public static function create(Game $game, $name) {
 		$m = new Match;
+		$m->setGame($game);
 		$m->setName($name);
-		// $m->year = $year;
-		// $m->time = $season ? 1 : 0;
-
-		// $m->seasons = array('spring', 'fall');
 
 		// Create the first turn
-		$turn = Turn::create($this);
-		$m->currentTurn=$turn; // Pointer to current turn
+		$turn = Turn::create($m);
+		$m->currentTurn=$turn;
 
 		// Copy over the territories to our first state
-		$tts = $game->getTerritoryTemplates();
+		$tts = $game->getGameTerritories();
 		foreach ($tts as $tt) {
-			$state = State::create($game, $this, $turn, $tt, $tt->getInitialOccupier(), $tt->getInitialUnit())
+			$state = State::create($game, $m, $turn, $tt, $tt->getInitialOccupier(), new Unit($tt->getInitialUnit()));
 		}
+		$m->save();
+		return $m;
 	}
 
 	/*
@@ -52,13 +54,12 @@ class Match extends BaseMatch {
 	}
 	 */
 
+	/**
+	 * Create a new turn and point currentTurn at it
+	 */
 	public function next() {
-		$this->time++;
-		$this->currentTurn = new Turn($this, $this->time%2);
-		$this->turns[] = $this->currentTurn;
-	}
-	public function start() {
-		$this->next();
+		$turn = Turn::create($this, $this->currentTurn);
+		$m->currentTurn=$turn; // Pointer to current turn
 	}
 
 	public function getCurrentTurn() {
@@ -89,14 +90,16 @@ class Match extends BaseMatch {
 	*/
 
 	public function __toString() {
-		$str = "$this->name: ";
-		$str .= $this->currentTurn()."\n";
+		$str = '';
+		$str .= $this->getName().": ";
+		$str .= $this->currentTurn . "\n";
 
-		$state = $this->state();
+		$states = StateQuery::create()->filterByMatch($this)->filterByTurn($this->currentTurn);
+
 		$str .= str_pad('Territory', 30) . str_pad('Empire', 12) . str_pad('Unit', 10) . "\n";
 		$str .= str_pad('', 29, '-') . ' ' . str_pad('', 11, '-') . ' '. str_pad('', 10, '-') . "\n";
-		foreach ($state as $s) {
-			$str .= str_pad($s[0], 30) . str_pad($s[1], 12) . $s[0]->getUnit() . "\n";
+		foreach ($states as $s) {
+			$str .= str_pad($s->getTerritory(), 30) . str_pad($s->getOccupier(), 12) . new Unit($s->getUnit()) . "\n";
 		}
 		return $str;
 	}

@@ -23,24 +23,29 @@ class State extends BaseState {
 	 *
 	 * @return State
 	 */
-	public static function create(Game $game, Match $match, Turn $turn, TerritoryTemplate $territory, Empire $occupier, Unit $unit) {
+	public static function create(Game $game, Match $match, Turn $turn, TerritoryTemplate $territory, Empire $occupier = null, Unit $unit = null) {
 		$o = new State;
 		$o->setMatch($match);
 		$o->setTurn($turn);
-		$o->setTerritoryTemplate($territory);
-		$o->setEmpire($occupier);
-		$o->setUnit($unit);
+		$o->setTerritory($territory);
+		if (!is_null($occupier)) {
+			$o->setOccupation($occupier, $unit);
+		}
+		print "State of $territory, initial occupier: $occupier\n";
 
 		return $o;
 	}
 
 	public function __toString() {
-		return sprintf("[Turn: %s] Territory %s occupied by %s's %f", $this->getTurn(), $this->getTerritoryTemplate(), $this->getEmpire(), $this->getUnit());
+		if (is_null($this->getOccupier()))
+			return sprintf("[Turn: %s] Territory %s unoccupied", $this->getTurn(), $this->getTerritory());
+		else
+			return sprintf("[Turn: %s] Territory %s occupied by %s's %s", $this->getTurn(), $this->getTerritory(), $this->getOccupier(), $this->getUnit());
 	}
 
-	public function setOccupier(iEmpire $occupier, Unit $unit) {
+	public function setOccupation(iEmpire $occupier, Unit $unit) {
 		$this->setOccupier($occupier);
-		$this->setUnit($unit);
+		$this->setUnit($unit->enum());
 	}
 
 	public function getType() { return parent::getType(); }

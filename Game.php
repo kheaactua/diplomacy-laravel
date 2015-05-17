@@ -4,6 +4,7 @@ namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Game as BaseGame;
 use DiplomacyEngine\Empires\iEmpire;
+use DiplomacyEngine\Empires\Unit;
 
 /**
  * Skeleton subclass for representing a row from the 'game' table.
@@ -21,6 +22,7 @@ class Game extends BaseGame {
 		$o->setName($name);
 		$o->setStartYear($year);
 		$o->setStartSeason($season);
+		$o->save();
 		return $o;
 	}
 
@@ -34,8 +36,8 @@ class Game extends BaseGame {
 		foreach ($objs as $obj) {
 			$t = Empire::create($obj->id, $obj->name_official, $obj->name_long, $obj->name_short);
 			$this->addEmpire($t);
-			//$empires[$t->getEmpireId()] = $t;
 		}
+		$this->save();
 	}
 
 	/**
@@ -48,17 +50,15 @@ class Game extends BaseGame {
 		foreach ($objs as $obj) {
 			$t = TerritoryTemplate::create($obj->name, $obj->type, false); // TODO fix supply center
 
-			$empire = EmpireQuery::create()->findPk($obj->empire_start);
+			$empire = EmpireQuery::create()->filterByGame($this)->filterByAbbr($obj->empire_start)->findOne();
 			if ($empire instanceof iEmpire) {
 				$t->setInitialOccupation($empire, new Unit($obj->starting_forces));
 			}
 
 			$this->addGameTerritory($t);
 			$t->save();
-			//$ts[$t->getTerritoryId()] = $t;
 			$ts[$obj->id] = $t; // Use the 'given' ID, rather than the new DB ID
 		}
-//print "keys: ". join(', ', array_keys($ts)) . "\n";
 
 		// Second pass, set up neighbours
 		foreach ($objs as $obj) {

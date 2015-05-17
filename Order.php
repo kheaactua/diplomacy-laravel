@@ -3,6 +3,7 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Order as BaseOrder;
+use DiplomacyEngine\Empires\Unit;
 
 /**
  * Skeleton subclass for representing a row from the 'empire_order' table.
@@ -60,7 +61,9 @@ abstract class Order extends BaseOrder {
 		return $this->getStatus() == 'failed';
 	}
 
-	abstract public function __toString();
+	public function __toString() {
+		return "Abstract order.";
+	}
 
 	/** Serialize the order into a string using a format */
 	protected function generateOrder($keys, $vals) {
@@ -110,10 +113,10 @@ class Move extends Order {
 	public $cmd = "MOVE";
 
 	public static function create(
-		Unit $unit,
-		Empire $empire,
-		Territory $source,
-		Territory $dest
+		Unit    $unit,
+		Empire  $empire,
+		State   $source,
+		State   $dest
 	) {
 		$o = new Move;
 		$o->setMatch($match);
@@ -144,11 +147,11 @@ class Support extends Order {
 	public $cmd = "SUPPORT";
 
 	public static function create(
-		Unit $unit,
-		Empire $empire,
-		Empire $aly,
-		Territory $source,
-		Territory $dest
+		Unit    $unit,
+		Empire  $empire,
+		Empire  $aly,
+		State   $source,
+		State   $dest
 	) {
 		$o = new Support;
 		$o->setMatch($match);
