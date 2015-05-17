@@ -10,9 +10,10 @@
 	</table>
 
 	<table name="empire">
-		<column name="game_id" type="integer" primaryKey="true" />
-		<column name="empire_id" type="varchar" size="10" required="true" primaryKey="true"/>
-		<column name="name_official" type="varchar" size="100" required="true" />
+		<column name="game_id" type="integer" required="true" />
+		<column name="empire_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+		<column name="abbr" type="varchar" required="true" size="10" description="Abbreviated name.  Would often be used as an ID on paper, or in the spreadsheet" />
+		<column name="name_official" phpName="name" type="varchar" size="100" required="true" />
 		<column name="name_long" type="varchar" size="100" required="true" />
 		<column name="name_short" type="varchar" size="10" required="true" />
 
@@ -21,9 +22,10 @@
 		</foreign-key>
 	</table>
 
-	<table name="match">
+	<table name="game_match" phpName="Match">
 		<column name="game_id" type="integer" />
 		<column name="match_id" type="integer" primaryKey="true" autoIncrement="true" />
+		<column name="name" type="varchar" size="150" required="true" />
 		<column name="created_on" type="timestamp" />
 		<column name="updated_at" type="timestamp" />
 
@@ -51,7 +53,7 @@
 
 		<column name="transcript" type="longvarchar" required="false" description="Full transcript of the orders that are executed in this turn" />
 
-		<foreign-key foreignTable="match" refPhpName="dfs" onDelete="CASCADE">
+		<foreign-key foreignTable="game_match" refPhpName="MatchTurn" onDelete="CASCADE">
 			<reference local="match_id" foreign="match_id" />
 		</foreign-key>
 
@@ -64,14 +66,14 @@
 	<table name="empire_order" phpName="Order" description="Saves the orders of each turn.  Required because there is a break in the process between initial orders and required retreats.">
 		<column name="match_id" type="integer" required="true" />
 		<column name="turn_id" type="integer" required="true" />
-		<column name="empire_id" type="varchar" size="10" required="true" />
+		<column name="empire_id" type="integer" required="true" />
 
 		<column name="order_id" type="varchar" size="10" required="true" primaryKey="true"/>
 		<column name="unit" type="enum" valueSet="army,fleet" description="Occupying unit." />
 		<column name="command" type="varchar" size="100" required="true" description="Full order/command text." />
 		<column name="status" type="enum" valueSet="succeeded,failed" default="succeeded" />
 		<column name="transcript" type="longvarchar" description="Transcript of this order" />
-		<foreign-key foreignTable="match" onDelete="CASCADE">
+		<foreign-key foreignTable="game_match" onDelete="CASCADE">
 			<reference local="match_id" foreign="match_id" />
 		</foreign-key>
 		<foreign-key foreignTable="turn" onDelete="CASCADE">
@@ -92,7 +94,7 @@
 		<column name="is_supply"  type="char" size="1" default="0" description="True (1) if this territory is a supply base" />
 
 		<!-- Initial state -->
-		<column name="initial_occupier_id" type="varchar" size="10" description="Initial occupying empire" />
+		<column name="initial_occupier_id" type="integer" description="Initial occupying empire" />
 		<column name="initial_unit" type="enum" valueSet="army,fleet,none" description="Occupying unit.  Only none if occpupier_id is empty." />
 
 		<foreign-key foreignTable="game" refPhpName="GameTerritory" onDelete="CASCADE">
@@ -108,16 +110,16 @@
 		<column name="turn_id"      type="integer" required="true" primaryKey="true" />
 		<column name="territory_id" type="integer" required="true" primaryKey="true" />
 
-		<column name="occupier_id" type="varchar" size="10" description="Occupying empire" />
+		<column name="occupier_id" type="integer" description="Occupying empire" />
 		<column name="unit" type="enum" valueSet="army,fleet,none" description="Occupying unit.  Only none if occpupier_id is empty." />
 
-		<foreign-key foreignTable="match" onDelete="CASCADE">
+		<foreign-key foreignTable="game_match" onDelete="CASCADE">
 			<reference local="match_id" foreign="match_id" />
 		</foreign-key>
 		<foreign-key foreignTable="turn" onDelete="CASCADE">
 			<reference local="turn_id" foreign="turn_id" />
 		</foreign-key>
-		<foreign-key foreignTable="territory_template" onDelete="CASCADE">
+		<foreign-key foreignTable="territory_template" phpName="Territory" refPhpName="Territory" onDelete="CASCADE">
 			<reference local="territory_id" foreign="territory_id" />
 		</foreign-key>
 		<foreign-key foreignTable="empire" phpName="Occupier" refPhpName="Occupier" onDelete="CASCADE">
