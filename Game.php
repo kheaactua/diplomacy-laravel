@@ -3,8 +3,8 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Game as BaseGame;
-use DiplomacyEngine\Empires\iEmpire;
-use DiplomacyEngine\Empires\Unit;
+use DiplomacyEngine\iEmpire;
+use DiplomacyEngine\Unit;
 
 /**
  * Skeleton subclass for representing a row from the 'game' table.

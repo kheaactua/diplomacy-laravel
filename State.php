@@ -3,9 +3,9 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\State as BaseState;
-use DiplomacyEngine\Territories\iTerritory;
-use DiplomacyEngine\Empires\Unit;
-use DiplomacyEngine\Empires\iEmpire;
+use DiplomacyEngine\iTerritory;
+use DiplomacyEngine\Unit;
+use DiplomacyEngine\iEmpire;
 
 /**
  * Skeleton subclass for representing a row from the 'match_state' table.

@@ -3,7 +3,7 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Empire as BaseEmpire;
-use DiplomacyEngine\Empires\iEmpire;
+use DiplomacyEngine\iEmpire;
 
 /**
  * Skeleton subclass for representing a row from the 'empire' table.

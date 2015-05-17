@@ -3,7 +3,7 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Order as BaseOrder;
-use DiplomacyEngine\Empires\Unit;
+use DiplomacyEngine\Unit;
 
 /**
  * Skeleton subclass for representing a row from the 'empire_order' table.

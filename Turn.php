@@ -3,7 +3,11 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Turn as BaseTurn;
-use DiplomacyEngine\Turns\iTurn;
+use DiplomacyEngine\iTurn;
+use DiplomacyEngine\PlayerMap;
+use DiplomacyOrm\Move;
+use DiplomacyOrm\Support;
+
 
 /**
  * Skeleton subclass for representing a row from the 'turn' table.
@@ -156,8 +160,9 @@ class Turn extends BaseTurn implements iTurn {
 		foreach ($ters as &$t) {
 			$ret[$t->getTerritoryId()] = array('territory' => $t, 'orders' => array(), 'tally' => new PlayerMap($t->getOccupier()));
 
-			foreach ($this->orders as &$o) {
-				$affected = $o->territories();
+			$orders = $this->getOrders();
+			foreach ($orders as &$o) {
+				$affected = $o->getTerritories();
 				foreach ($affected as $t2) {
 					if ($t2 == $t) {
 						if (!$include_failed && $o->failed()) continue;
@@ -190,16 +195,16 @@ class Turn extends BaseTurn implements iTurn {
 			foreach ($map['orders'] as &$o) {
 				if ($o->failed()) continue;
 
-				if ($o instanceof Orders\Move) {
+				if ($o instanceof Move) {
 					if ($o->dest == $t) {
 						$tally->inc($o->getEmpire());
 					}
-				} elseif ($o instanceof Orders\Support) {
+				} elseif ($o instanceof Support) {
 					if ($o->dest == $t) {
 						$tally->inc($o->supporting());
 					}
 				} else {
-					trigger_error("Not sure how to perform [". get_class($o). "] $o");
+					trigger_error("Not sure how to perform <". get_class($o). "> $o");
 				}
 			}
 		}
@@ -218,28 +223,28 @@ class Turn extends BaseTurn implements iTurn {
 
 			foreach ($map['orders'] as &$o) {
 				if ($o->failed()) continue;
-				if ($o instanceof Orders\Move) {
+				if ($o instanceof Move) {
 					if ($o->dest == $t && $o->getEmpire() != $winner) {
-						$o->fail("Lost battle for $t to $winner");
+						$o->fail("Lost battle for ". $t->getTerritory(). " to $winner");
 					}
-				} elseif ($o instanceof Orders\Support) {
+				} elseif ($o instanceof Support) {
 					if ($o->dest == $t && $o->supporting() != $winner) {
-						$o->fail("Supported ". $o->supporting() . " in failed campaign against $t that $winner won");
+						$o->fail("Supported ". $o->supporting() . " in failed campaign against ". $t->getTerritory(). " that $winner won");
 					}
 				} else {
-					trigger_error("Not sure how to perform [". get_class($o) . "]$o");
+					trigger_error("Not sure how to perform <". get_class($o) . ">$o");
 				}
 			}
 		}
 
-		// Debug
-		print "\n";
-		print "Resolutions before retreats:\n";
-		foreach ($ters as $t_id=>&$map) {
-			print "{$map['territory']}, tally:\n";
-			print $map['tally'];
-			print "\n";
-		}
+		// // Debug
+		// print "\n";
+		// print "Resolutions before retreats:\n";
+		// foreach ($ters as $t_id=>&$map) {
+		// 	print "{$map['territory']}, tally:\n";
+		// 	print $map['tally'];
+		// 	print "\n";
+		// }
 
 		// Determine required retreats.  Go through the resolutions, and find all
 		// occupiers who are not the winners
@@ -283,7 +288,7 @@ class Turn extends BaseTurn implements iTurn {
 		foreach ($orders as $o) {
 			$str .= str_pad($o, 40) . ($o->failed()?'FAIL':'PASS') . "\n";
 			if ($o->failed()) {
-				$transcript = $o->getTranscript();
+				$transcript = preg_split("/\n/", trim($o->getTranscript()));
 				foreach ($transcript as $t) {
 					$str .= " - $t\n";
 				}

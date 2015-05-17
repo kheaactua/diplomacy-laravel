@@ -4,9 +4,9 @@ namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\TerritoryTemplate as BaseTerritoryTemplate;
 use DiplomacyOrm\Map\TerritoryTemplateTableMap;
-use DiplomacyEngine\Territories\iTerritory;
-use DiplomacyEngine\Empires\Unit;
-use DiplomacyEngine\Empires\iEmpire;
+use DiplomacyEngine\iTerritory;
+use DiplomacyEngine\Unit;
+use DiplomacyEngine\iEmpire;
 
 /** Terrotory type, should use propel constants.
  * @deprecated */
