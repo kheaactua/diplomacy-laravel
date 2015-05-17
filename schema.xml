@@ -64,18 +64,14 @@
 	</table>
 
 	<table name="empire_order" phpName="Order" description="Saves the orders of each turn.  Required because there is a break in the process between initial orders and required retreats.">
-		<column name="match_id" type="integer" required="true" />
-		<column name="turn_id" type="integer" required="true" />
+		<column name="order_id" type="integer"  required="true" primaryKey="true" autoIncrement="true" />
+		<column name="turn_id"  type="integer"  required="true" />
 		<column name="empire_id" type="integer" required="true" />
 
-		<column name="order_id" type="varchar" size="10" required="true" primaryKey="true"/>
 		<column name="unit" type="enum" valueSet="army,fleet" description="Occupying unit." />
 		<column name="command" type="varchar" size="100" required="true" description="Full order/command text." />
 		<column name="status" type="enum" valueSet="succeeded,failed" default="succeeded" />
 		<column name="transcript" type="longvarchar" description="Transcript of this order" />
-		<foreign-key foreignTable="game_match" onDelete="CASCADE">
-			<reference local="match_id" foreign="match_id" />
-		</foreign-key>
 		<foreign-key foreignTable="turn" onDelete="CASCADE">
 			<reference local="turn_id" foreign="turn_id" />
 		</foreign-key>
