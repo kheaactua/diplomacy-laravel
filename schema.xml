@@ -63,21 +63,74 @@
 		</behavior>
 	</table>
 
-	<table name="empire_order" phpName="Order" description="Saves the orders of each turn.  Required because there is a break in the process between initial orders and required retreats.">
+	<table name="empire_order" phpName="Order" abstract="false" description="Saves the orders of each turn.  Required because there is a break in the process between initial orders and required retreats.">
 		<column name="order_id" type="integer"  required="true" primaryKey="true" autoIncrement="true" />
 		<column name="turn_id"  type="integer"  required="true" />
 		<column name="empire_id" type="integer" required="true" />
-
 		<column name="unit" type="enum" valueSet="army,fleet" description="Occupying unit." />
 		<column name="command" type="varchar" size="100" required="true" description="Full order/command text." />
 		<column name="status" type="enum" valueSet="succeeded,failed" default="succeeded" />
 		<column name="transcript" type="longvarchar" description="Transcript of this order" />
+		<column name="source_id" type="integer" description="Source territory of order" />
 		<foreign-key foreignTable="turn" onDelete="CASCADE">
 			<reference local="turn_id" foreign="turn_id" />
 		</foreign-key>
 		<foreign-key foreignTable="empire" onDelete="CASCADE">
 			<reference local="empire_id" foreign="empire_id" />
 		</foreign-key>
+		<foreign-key foreignTable="match_state" phpName="Source" onDelete="CASCADE">
+			<reference local="source_id" foreign="state_id" />
+		</foreign-key>
+	</table>
+
+	<table name="order_move" phpName="Move">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
+		<column name="dest_id" type="integer" description="Source destination of order" />
+		<foreign-key foreignTable="match_state" phpName="Dest" onDelete="CASCADE">
+			<reference local="dest_id" foreign="state_id" />
+		</foreign-key>
+	</table>
+
+	<table name="order_support" phpName="Support">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
+		<column name="ally_id" type="integer" description="Ally that your are supporting" />
+		<column name="dest_id" type="integer" description="Source destination of order" />
+		<foreign-key foreignTable="empire" phpName="Ally" onDelete="CASCADE">
+			<reference local="ally_id" foreign="empire_id" />
+		</foreign-key>
+		<foreign-key foreignTable="match_state" phpName="Dest" onDelete="CASCADE">
+			<reference local="dest_id" foreign="state_id" />
+		</foreign-key>
+	</table>
+
+	<table name="order_convoy" phpName="Convoy">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
+		<column name="middle_id" type="integer" description="Territory to convoy through" />
+		<column name="dest_id"   type="integer" description="Source destination of order" />
+		<foreign-key foreignTable="match_state" phpName="Middle" onDelete="CASCADE">
+			<reference local="middle_id" foreign="state_id" />
+		</foreign-key>
+		<foreign-key foreignTable="match_state" PhpName="Desta" onDelete="CASCADE">
+			<reference local="dest_id" foreign="state_id" />
+		</foreign-key>
+	</table>
+
+	<table name="order_hold" phpName="Hold">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
+	</table>
+
+	<table name="order_disband" phpName="Disband">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
 	</table>
 
 	<table name="territory_template">
@@ -101,10 +154,11 @@
 		</foreign-key>
 	</table>
 
-	<table name="match_state" phpName="State" isCrossRef="true" description="Contains the match state for every turn">
-		<column name="match_id"     type="integer" required="true" primaryKey="true" />
-		<column name="turn_id"      type="integer" required="true" primaryKey="true" />
-		<column name="territory_id" type="integer" required="true" primaryKey="true" />
+	<table name="match_state" phpName="State" description="Contains the match state for every turn">
+		<column name="state_id"     type="integer" required="true" primaryKey="true" autoIncrement="true" description="Needed for ease referencing" />
+		<column name="match_id"     type="integer" required="true" />
+		<column name="turn_id"      type="integer" required="true" />
+		<column name="territory_id" type="integer" required="true" />
 
 		<column name="occupier_id" type="integer" description="Occupying empire" />
 		<column name="unit" type="enum" valueSet="army,fleet,none" description="Occupying unit.  Only none if occpupier_id is empty." />
