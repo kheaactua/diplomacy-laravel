@@ -49,7 +49,7 @@ class Turn extends BaseTurn implements iTurn {
 			$states = StateQuery::create()
 				->filterByTurn($this)
 				->filterByOccupier($l->getEmpire())
-				->filterByTerritory($l->source->getTerritory())
+				->filterByTerritory($l->getSource()->getTerritory())
 				->find();
 
 			if (count($states) == 1) {
@@ -99,15 +99,16 @@ class Turn extends BaseTurn implements iTurn {
 	protected function validateOrders() {
 		$sources = array();
 		$orders = $this->getOrders();
-		foreach ($orders as &$o) {
+		foreach ($orders as $o) {
+			$o = Order::downCast($o);
 			$o->validate();
 
 			if ($o->failed()) continue;
-			if (!array_key_exists($o->source->getTerritoryId(), $sources))
-				$sources[$o->source->getTerritoryId()] = array();
+			if (!array_key_exists($o->getSource()->getTerritoryId(), $sources))
+				$sources[$o->getSource()->getTerritoryId()] = array();
 
 // TODO make exception for CONVOYS
-			$sources[$o->source->getTerritoryId()][] = $o;
+			$sources[$o->getSource()->getTerritoryId()][] = $o;
 		}
 		foreach ($sources as $orders) {
 			if (count($orders) > 1) {
@@ -137,9 +138,9 @@ class Turn extends BaseTurn implements iTurn {
 				if ($ref->failed()) continue;
 				if ($order == $ref) continue;
 
-				if (
-					$order->source->getTerritory() == $ref->dest->getTerritory()
-					&& $order->supporting() != $ref->supporting
+				if ($order instanceof MultiTerritory
+					&& $order->getSource()->getTerritory() == $ref->getDest()->getTerritory()
+					&& $order->getSupporting() != $ref->getSupporting()
 					// TODO convoy exception
 				) {
 					$order->fail("Source territory (". $order->source .") is being acted on by ". $ref->getEmpire() . " in '". $ref . "'");
@@ -152,12 +153,13 @@ class Turn extends BaseTurn implements iTurn {
 	 * Most territories will not be acted upon.  This function filters our
 	 * list of territories by which ones will be acted upon.
 	 *
-	 * return array(iTerritory)
+	 * return array(State)
 	 */
 	protected function getActiveTerritories() {
 		$ret = array();
 		$orders = $this->getOrders();
 		foreach ($orders as $o) {
+			$o = Order::downCast($o);
 			$ts = $o->getTerritories();
 			$ret = array_merge($ret, $ts);
 		}
@@ -166,7 +168,7 @@ class Turn extends BaseTurn implements iTurn {
 
 	/**
 	 * Build an array of territories and which orders are acting upon them
-	 * @return array(tid=>array('territory' => iTerritory, 'orders' => array(Orders), ..)
+	 * @return array(territory_template_id=>array('state' => State, 'orders' => array(Orders), ..)
 	 */
 	protected function getTerritoryOrderMap($include_failed = true) {
 		$ret = array();
@@ -174,18 +176,19 @@ class Turn extends BaseTurn implements iTurn {
 		// Could make these loops more efficient, but doing it in the
 		// "easiest to read" way.
 		// First filter the territories down
-		$ters = $this->getActiveTerritories();
+		$states = $this->getActiveTerritories();
 
-		foreach ($ters as &$t) {
-			$ret[$t->getTerritoryId()] = array('territory' => $t, 'orders' => array(), 'tally' => new PlayerMap($t->getOccupier()));
+		foreach ($states as &$s) {
+			$ret[$s->getTerritory()->getPrimaryKey()] = array('state' => $s, 'orders' => array(), 'tally' => new PlayerMap($s->getOccupier()));
 
 			$orders = $this->getOrders();
 			foreach ($orders as &$o) {
+				$o = Order::downCast($o);
 				$affected = $o->getTerritories();
-				foreach ($affected as $t2) {
-					if ($t2 == $t) {
+				foreach ($affected as $s2) {
+					if ($s2->getTerritory() == $s->getTerritory()) {
 						if (!$include_failed && $o->failed()) continue;
-						$ret[$t->getTerritoryId()]['orders'][] = $o;
+						$ret[$s->getTerritory()->getPrimaryKey()]['orders'][] = $o;
 					}
 				}
 			}
@@ -208,19 +211,19 @@ class Turn extends BaseTurn implements iTurn {
 		// Limit our iterations to territories in play
 		$ters = $this->getTerritoryOrderMap(false); // false to skip failed orders
 		foreach ($ters as $t_id=>&$map) {
-			$t     = $map['territory'];
+			$s     = $map['state'];
 			$tally = $map['tally'];
 
 			foreach ($map['orders'] as &$o) {
 				if ($o->failed()) continue;
 
 				if ($o instanceof Move) {
-					if ($o->dest == $t) {
+					if ($o->getDest() == $s) {
 						$tally->inc($o->getEmpire());
 					}
 				} elseif ($o instanceof Support) {
-					if ($o->dest == $t) {
-						$tally->inc($o->supporting());
+					if ($o->getDest()->getTerritory() == $s->getTerritory()) {
+						$tally->inc($o->getSupporting());
 					}
 				} else {
 					trigger_error("Not sure how to perform <". get_class($o). "> $o");
@@ -230,7 +233,7 @@ class Turn extends BaseTurn implements iTurn {
 
 		foreach ($ters as $t_id=>&$map) {
 			// Find the winner of each territory
-			$t = $map['territory'];
+			$t = $map['state'];
 			$winner = $map['tally']->findWinner()->winner();
 
 			if (is_null($winner)) {
@@ -243,12 +246,12 @@ class Turn extends BaseTurn implements iTurn {
 			foreach ($map['orders'] as &$o) {
 				if ($o->failed()) continue;
 				if ($o instanceof Move) {
-					if ($o->dest == $t && $o->getEmpire() != $winner) {
+					if ($o->getDest() == $t && $o->getEmpire() != $winner) {
 						$o->fail("Lost battle for ". $t->getTerritory(). " to $winner");
 					}
 				} elseif ($o instanceof Support) {
-					if ($o->dest == $t && $o->supporting() != $winner) {
-						$o->fail("Supported ". $o->supporting() . " in failed campaign against ". $t->getTerritory(). " that $winner won");
+					if ($o->getDest() == $t && $o->getSupporting() != $winner) {
+						$o->fail("Supported ". $o->getSupporting() . " in failed campaign against ". $t->getTerritory(). " that $winner won");
 					}
 				} else {
 					trigger_error("Not sure how to perform <". get_class($o) . ">$o");
@@ -260,7 +263,7 @@ class Turn extends BaseTurn implements iTurn {
 		print "\n";
 		print "Resolutions before retreats:\n";
 		foreach ($ters as $t_id=>&$map) {
-			print $map['territory']->getTerritory(). ", tally:\n";
+			print $map['state']->getTerritory(). ", tally:\n";
 			print $map['tally'];
 			print "\n";
 		}
@@ -269,13 +272,13 @@ class Turn extends BaseTurn implements iTurn {
 		// occupiers who are not the winners
 		$retreats = array();
 		foreach ($ters as $t_id=>&$map) {
-			$t = $map['territory'];
+			$s = $map['state'];
 			$winner = $map['tally']->winner();
 
 			if (is_null($winner)) continue;
 
 			if ($t->getOccupier() != $winner) {
-				$retreats[] = array('territory' => $t, 'empire' => $t->getOccupier(), 'winner' => $winner);
+				$retreats[] = array('territory' => $s->getTerritory(), 'empire' => $t->getOccupier(), 'winner' => $winner);
 			}
 		}
 
@@ -305,6 +308,7 @@ class Turn extends BaseTurn implements iTurn {
 		$str = "Orders:\n";
 		$orders = $this->getOrders();
 		foreach ($orders as $o) {
+			$o = Order::downCast($o);
 			$str .= str_pad($o, 40) . ($o->failed()?'FAIL':'PASS') . "\n";
 			if ($o->failed()) {
 				$transcript = preg_split("/\n/", trim($o->getTranscript()));

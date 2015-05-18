@@ -3,7 +3,21 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Order as BaseOrder;
+use DiplomacyOrm\Move;
+use DiplomacyOrm\Support;
+use DiplomacyOrm\Convoy;
+use DiplomacyOrm\Disband;
+use DiplomacyOrm\Hold;
 use DiplomacyEngine\Unit;
+
+/**
+ * Trait to get around inheritance conflicting with static calls
+ */
+trait StaticOrderMethods {
+	public static function getOrderCommand() { return self::$cmd;      }
+	public static function getFormat()       { return self::$format;   }
+	public static function getFormatRe()     { return self::$formatRe; }
+}
 
 /**
  * Skeleton subclass for representing a row from the 'empire_order' table.
@@ -15,17 +29,17 @@ use DiplomacyEngine\Unit;
  * long as it does not already exist in the output directory.
  *
  */
-abstract class Order extends BaseOrder {
+//abstract class Order extends BaseOrder {
+class Order extends BaseOrder {
+	use StaticOrderMethods;
 
-	/**
-	 * Format of the order, uses replacable strings
-	 *
-	 * %cmd% %source% %dest%
-	 */
-	public $format;
-
-	/** The command assoiated with this order */
-	public $cmd = "";
+	// Static member variables with inheritance is irratating,
+	// so hardcoding these into getters instead of member variables
+	protected static $cmd = 'N/A';
+	//protected function getFormat() { return '%empire% %cmd% %unit% %source%-%dest%'; }
+	//protected function getFormatRe() { return '/(MOVE)\s+(army|a|fleet|f)\s+([^-]+)-(.*)/'; }
+	protected static $format = 'no format';
+	protected static $formatRe = '//';
 
 	/**
 	 * The source territory
@@ -42,20 +56,22 @@ abstract class Order extends BaseOrder {
 	 */
 	protected $unit;
 
-	/*
-	public static function create(
-		Unit $unit,
-		Empire $empire,
-		Territory $source,
-		Territory $dest
-	) {
-		$this->unit= $unit;
-		$this->setEmpire($empire);
-		$this->source = $source;
-		$this->dest   = $dest;
-		$this->transcript = array();
-	}
-	*/
+// 	/**
+// 	 * Populate our member variables based on the command text.
+// 	 * Inefficient, might be changed later.  This is a product of
+// 	 * all orders having different syntax
+// 	 **/
+// 	public function init() {
+// 		if ($this->getOrderId()) {
+// 			// If we're an object already,
+// 			// Populate source and dest.
+// print "initializing order\n";
+// 			$c = $this->getHandler();
+// 			call_user_func('DiplomacyOrm\\'.$c.'::interpretText', $this->getCommand(), $this->getTurn()->getMatch(), $this->getEmpire);
+// 		} else {
+// print "Not initializing order\n";
+// 		}
+// 	}
 
 	public function failed() {
 		return $this->getStatus() == 'failed';
@@ -68,7 +84,7 @@ abstract class Order extends BaseOrder {
 	/** Serialize the order into a string using a format */
 	protected function generateOrder($keys, $vals) {
 		array_walk($keys, function(&$e) { $e = "/%$e%/"; });
-		$str = preg_replace($keys, $vals, $this->format);
+		$str = preg_replace($keys, $vals, call_user_func(array(get_class($this), 'getFormat')));
 		return $str;
 	}
 
@@ -85,7 +101,7 @@ abstract class Order extends BaseOrder {
 	 *
 	 * @return Empire
 	 */
-	public function supporting() {
+	public function getSupporting() {
 		return $this->getEmpire();
 	}
 
@@ -94,8 +110,8 @@ abstract class Order extends BaseOrder {
 
 		// Does the empire own the source territory
 // TODO make exception for CONVOYS
-		if ($this->source->getOccupier() != $this->getEmpire()) {
-			$this->fail($this->getEmpire() . " does not occupy ". $this->source->getTerritory());
+		if ($this->getSource()->getOccupier() != $this->getEmpire()) {
+			$this->fail($this->getEmpire() . " does not occupy ". $this->getSource()->getTerritory());
 		}
 	}
 
@@ -106,83 +122,50 @@ abstract class Order extends BaseOrder {
 	 * @return array(State, ...)
 	 **/
 	public function getTerritories() {
-		return array($this->source, $this->dest);
+		return array($this->getSource());
 	}
-}
-
-class Move extends Order {
-	public $format = "%empire% %cmd% %unit% %source%-%dest%";
-
-	/** The command assoiated with this order */
-	public $cmd = "MOVE";
 
 	/**
-	 * Create unsaved (NS=No Save) order
+	 * Given text, attempts to interpret the text as an order
+	 *
+	 * @return Order
 	 */
-	public static function createNS(
-		Empire  $empire,
-		Unit    $unit,
-		State   $source,
-		State   $dest
-	) {
-		$o = new Move;
-		$o->setEmpire($empire);
-		$o->setUnit($unit->enum());
+	public static function interpretText($command, Match $match, Empire $empire) {
+		// Try to delegate this to a subfunction asap
+		$command = trim($command);
 
-		$o->source = $source;
-		$o->dest = $dest;
-		return $o;
+		// Collect all the order types
+		// Slow, might want to hard code this...
+		$subclasses = array('Move', 'Support', 'Hold', 'Disband', 'Convoy');
+
+		// First word should always be the order
+		if (preg_match('/^(\w+)\s/', $command, $matches)) {
+			$cmd = $matches[1];
+
+			foreach ($subclasses as $sc) {
+				$sc = __NAMESPACE__."\\$sc";
+print "[$sc] orderCmd=". call_user_func(array($sc, 'getOrderCommand')) . " == $cmd\n";
+				if (strcasecmp(call_user_func(array($sc, 'getOrderCommand')), $cmd) === 0) {
+					// Found our delegate!
+					return $sc::interpretText($command, $match, $empire);
+				}
+			}
+			trigger_error("Could not find order delegate for '$cmd'");
+		} else {
+			trigger_error("No order given in command: '$command'");
+		}
 	}
-
-	public function __toString() {
-		$str = $this->generateOrder(
-			array('empire', 'unit', 'cmd', 'source', 'dest'),
-			array("[". str_pad($this->getEmpire(),10)."]", new Unit($this->unit), $this->cmd, $this->source->getTerritory(), $this->dest->getTerritory())
-		);
-
-		return $str;
-	}
-}
-
-
-class Support extends Order {
-	public $format = "%empire% %cmd% %aly% %source%-%dest%";
-
-	/** The command assoiated with this order */
-	public $cmd = "SUPPORT";
 
 	/**
-	 * Create unsaved (NS=No Save) order
+	 * Not proper downcasting, really replacing an object with it's
+	 * child.
 	 */
-	public static function createNS(
-		Empire  $empire,
-		Empire  $aly,
-		Unit    $unit,
-		State   $source,
-		State   $dest
-	) {
-		$o = new Support;
-		$o->setEmpire($empire);
-		$o->setUnit($unit->enum());
-
-		$o->source = $source;
-		$o->dest = $dest;
-		$o->aly = $aly;
-		return $o;
+	public static function downCast(Order $o) {
+		if ($o->hasChildObject()) {
+			//print "Downcasting to ". $o->getDescendantClass() . "\n";
+			return $o->getChildObject();
+		}
 	}
-	public function getSupporting() {
-		return $this->aly;
-	}
-
-	public function __toString() {
-		$str = $this->generateOrder(
-			array('empire', 'aly', 'unit', 'cmd', 'source', 'dest'),
-			array("[". str_pad($this->getEmpire(),10)."]", $this->aly, new Unit($this->unit), $this->cmd, $this->source->getTerritory(), $this->dest->getTerritory())
-		);
-
-		return $str;
-	}
-
 }
 
 class OrderException extends \Exception { };
