@@ -20,6 +20,16 @@ class Match extends BaseMatch {
 	// Pointer to current turn
 	protected $currentTurn;
 
+	public function __construct() {
+		if ($this->getMatchId()) {
+			// If we're an object.. Set the currentTurn
+			$c = new \Propel\Runtime\ActiveQuery\Criteria;
+			$c->addDescendingOrderByColumn(TurnTableMap::COL_CREATED_ON);
+			$turns = $this->getTurns(null, $c);
+			$this->currentTurn = $turns[0];
+		}
+	}
+
 	/**
 	 * New match.
 	 * @param $name Name of the match/map
