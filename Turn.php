@@ -43,6 +43,24 @@ class Turn extends BaseTurn implements iTurn {
 		return $o;
 	}
 
+	public function addOrder(Order $l) {
+		if (is_null($l->getUnit())) {
+			// Guess at the unit based on game state
+			$states = StateQuery::create()
+				->filterByTurn($this)
+				->filterByOccupier($l->getEmpire())
+				->filterByTerritory($l->source->getTerritory())
+				->find();
+
+			if (count($states) == 1) {
+				$l->setUnit($states[0]->getUnit());
+			} else {
+				throw new \DiplomacyEngine\InvalidUnitException("Could not determine unit");
+			}
+		}
+		return parent::addOrder($l);
+	}
+
 	public function isSpring() {
 		return $this->getMatch()->getGame()->getStartSeason() % self::dt == 0;
 	}
@@ -109,6 +127,7 @@ class Turn extends BaseTurn implements iTurn {
 	 *   Ontario, Ontario's attack order is canceled.
 	 *
 	 * TODO Put in exception for convoys
+	 * TODO A territory might be able to have a fleet and an army, so two orders could be sourced from a territory
 	 * */
 	protected function removeOrdersFromAttackedTerritories() {
 		$orders = $this->getOrders();
@@ -237,14 +256,14 @@ class Turn extends BaseTurn implements iTurn {
 			}
 		}
 
-		// // Debug
-		// print "\n";
-		// print "Resolutions before retreats:\n";
-		// foreach ($ters as $t_id=>&$map) {
-		// 	print "{$map['territory']}, tally:\n";
-		// 	print $map['tally'];
-		// 	print "\n";
-		// }
+		// Debug
+		print "\n";
+		print "Resolutions before retreats:\n";
+		foreach ($ters as $t_id=>&$map) {
+			print $map['territory']->getTerritory(). ", tally:\n";
+			print $map['tally'];
+			print "\n";
+		}
 
 		// Determine required retreats.  Go through the resolutions, and find all
 		// occupiers who are not the winners
