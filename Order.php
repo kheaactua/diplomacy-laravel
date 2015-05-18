@@ -185,4 +185,7 @@ class Support extends Order {
 
 }
 
+class OrderException extends \Exception { };
+class InvalidOrderException extends OrderException { };
+
 // vim: ts=3 sw=3 noet :

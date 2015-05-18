@@ -74,4 +74,10 @@ class Game extends BaseGame {
 	}
 }
 
+class GameException extends \Exception { };
+class TerritoryMatchException extends GameException { };
+class MultiTerritoryMatchException extends TerritoryMatchException { };
+class NoTerritoryMatchException extends TerritoryMatchException { };
+
+
 // vim: ts=3 sw=3 noet :
