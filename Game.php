@@ -5,6 +5,7 @@ namespace DiplomacyOrm;
 use DiplomacyOrm\Base\Game as BaseGame;
 use DiplomacyEngine\iEmpire;
 use DiplomacyEngine\Unit;
+use Propel\Runtime\ActiveQuery\Criteria;
 
 /**
  * Skeleton subclass for representing a row from the 'game' table.
@@ -71,6 +72,51 @@ class Game extends BaseGame {
 		}
 		$this->save();
 		//return $ts;
+	}
+
+	/**
+	 * Try to look up a game territory given a string.  This is intended
+	 * to be as loose as possible to match what people type.  Only return
+	 * if one result is found.
+	 *
+	 * @param $str Territory name, or abbreviation, or anything we put in
+	 *             the system that a user may use
+	 * @param Empire Sometimes we can limit what territories might be
+	 *               being searched for by the empire.  In this case,
+	 *               use the game state to filter the results.
+	 * @return State
+	 * @throws TerritoryMatchException
+	 */
+	public function lookupTerritory($str, Match $match = null, Empire $empire = null) {
+global $config; $config->system->db->useDebug(true);
+		$query = StateQuery::create();
+		if($match instanceof Match && $empire instanceof Empire) {
+			// Can't use _if/_endif because it would still attempt
+			// to evaluate $match, which in this case would be null
+			$query
+				-> filterByTurn($match->getCurrentTurn())
+				->filterByOccupier($empire)
+			;
+		}
+		$query->join('State.Territory')
+			->useTerritoryQuery()
+				->filterByGame($this) // probably unnecessary
+				->filterByName($str.'%', Criteria::LIKE)
+			->endUse()
+		;
+
+		$ts = $query->find();
+$config->system->db->useDebug(false);
+		if (count($ts) == 1) {
+			return $ts[0];
+		} elseif (count($ts) > 1) {
+			$match_names = [];
+			foreach ($ts as $t)
+				$match_names = $t->getTerritory()->getName();
+			throw new MultiTerritoryMatchException("Multiple matches for $str: '". join("', '", $match_names) . "'");
+		} else {
+			throw new NoTerritoryMatchException("No match for $str");
+		}
 	}
 }
 
