@@ -8,6 +8,7 @@ use DiplomacyEngine\PlayerMap;
 use DiplomacyOrm\Move;
 use DiplomacyOrm\Support;
 
+use Propel\Runtime\ActiveQuery\Criteria;
 
 /**
  * Skeleton subclass for representing a row from the 'turn' table.
@@ -19,7 +20,7 @@ use DiplomacyOrm\Support;
  * long as it does not already exist in the output directory.
  *
  */
-class Turn extends BaseTurn implements iTurn {
+class Turn extends BaseTurn {
 	const dt = 2; // Timesteps per year.  Half of this is hard programmed in (Seasons)
 
 	// /** Array representing the territories (but not Territory objects) used
@@ -32,18 +33,27 @@ class Turn extends BaseTurn implements iTurn {
 	 * @param iMatch The match being played
 	 * @param iTurn Last turn in match, null if this is the first turn
 	 **/
-	public static function create(Match $match, iTurn $last_turn = null) {
+	public static function create(Match $match, Turn $last_turn = null) {
 		$o = new Turn;
 		$o->setMatch($match);
 
-		if ($last_turn instanceof iTurn) {
-			$o->setStep($last_turn->step+1);
+		if ($last_turn instanceof Turn) {
+			$o->setStep($last_turn->getStep()+1);
 		}
 		$o->save();
 		return $o;
 	}
 
 	public function addOrder(Order $l) {
+		if ($this->getStatus() !== 'open') {
+			// One exception, retreats
+print "$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'no') . "\n";
+			if ($this->getStatus() === 'require_retreats' && $l instanceof Retreat) {
+				// Good
+			} else {
+				throw new TurnClosedToOrdersException($this . ' state is "'. $this->getStatus() .'", can only accept orders on "open" state');
+			}
+		}
 		if (is_null($l->getUnit())) {
 			// Guess at the unit based on game state
 			$states = StateQuery::create()
@@ -62,11 +72,11 @@ class Turn extends BaseTurn implements iTurn {
 	}
 
 	public function isSpring() {
-		return $this->getMatch()->getGame()->getStartSeason() % self::dt == 0;
+		return ($this->getMatch()->getGame()->getStartSeason()+$this->getStep()) % self::dt == 0;
 	}
 
 	public function __toString() {
-		$season = $this->isSpring() ? 'Spring' : 'Fall';
+		$season = "[". $this->getPrimaryKey() . "]" . ($this->isSpring() ? 'Spring' : 'Fall');
 		$year = $this->getMatch()->getGame()->getStartYear() + floor(($this->getStep()/self::dt));
 
 		return "$season $year";
@@ -82,11 +92,23 @@ class Turn extends BaseTurn implements iTurn {
 		return $str;
 	}
 
-	public function resolveAttacks() {
+	/**
+	 * Wrapper function for processing all orders.  Will
+	 * validate orders, ensure the proper state of the turn
+	 * and return what info (retreats) it needs to continue
+	 */
+	public function processOrders() {
 		$this->validateOrders();
 		$this->removeOrdersFromAttackedTerritories();
-		$this->resolveOrders();
-		$this->carryOutOrders();
+		$retreats = $this->resolveOrders();
+
+print "Result $retreats\n";
+		if ($retreats->getStatus() == ResolutionResult::SUCCESS) {
+			$result = $this->carryOutOrders();
+			return $result;
+		} else {
+			return $retreats;
+		}
 	}
 
 	/** While orders should be validated before even being assigned
@@ -100,7 +122,7 @@ class Turn extends BaseTurn implements iTurn {
 		$sources = array();
 		$orders = $this->getOrders();
 		foreach ($orders as $o) {
-			$o = Order::downCast($o);
+			if ($o->hasChildObject()) $o = Order::downCast($o);
 			$o->validate();
 
 			if ($o->failed()) continue;
@@ -153,42 +175,56 @@ class Turn extends BaseTurn implements iTurn {
 	 * Most territories will not be acted upon.  This function filters our
 	 * list of territories by which ones will be acted upon.
 	 *
+	 * This is easier than a DB query, as the sub-classing would make it
+	 * hard to select source, dest, middle, etc..  This way we grab all the
+	 * orders and they tell us what territories they're acting one
+	 *
 	 * return array(State)
 	 */
-	protected function getActiveTerritories() {
+	protected function getActiveStates() {
 		$ret = array();
 		$orders = $this->getOrders();
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
-			$ts = $o->getTerritories();
+			$ts = $o->getActiveStates();
 			$ret = array_merge($ret, $ts);
 		}
 		return $ret;
 	}
 
 	/**
-	 * Build an array of territories and which orders are acting upon them
-	 * @return array(territory_template_id=>array('state' => State, 'orders' => array(Orders), ..)
+	 * Build an array of states, along with the orders being acted upon them
+	 *
+	 * @return array(territory_template_id=>array('state' => State, 'orders' => array(Orders), 'tally' => PlayerMap), ...)
 	 */
-	protected function getTerritoryOrderMap($include_failed = true) {
+	protected function getStateOrderMap($include_failed = true) {
 		$ret = array();
 
 		// Could make these loops more efficient, but doing it in the
 		// "easiest to read" way.
 		// First filter the territories down
-		$states = $this->getActiveTerritories();
+		$states = $this->getActiveStates();
 
-		foreach ($states as &$s) {
-			$ret[$s->getTerritory()->getPrimaryKey()] = array('state' => $s, 'orders' => array(), 'tally' => new PlayerMap($s->getOccupier()));
+		foreach ($states as &$s1) {
+			$pkey = $s1->getTerritory()->getPrimaryKey(); // I don't think this matters, PK could be anything
+			$ret[$pkey] = array('state' => $s1, 'orders' => array(), 'tally' => new PlayerMap($s1->getOccupier()));
 
+			// Loop through all the states $s1
+			// 	Loop through the orders
+			// 		Loop through the states this order affects
+			// 			If one of these $s2 states is $s1,
+			// 				Add the order to our list.
+			//
+			// Basically, build a list of states that has a list of all the orders
+			// acting on it.
 			$orders = $this->getOrders();
 			foreach ($orders as &$o) {
 				$o = Order::downCast($o);
-				$affected = $o->getTerritories();
+				$affected = $o->getActiveStates();
 				foreach ($affected as $s2) {
-					if ($s2->getTerritory() == $s->getTerritory()) {
+					if ($s2->getTerritory() == $s1->getTerritory()) {
 						if (!$include_failed && $o->failed()) continue;
-						$ret[$s->getTerritory()->getPrimaryKey()]['orders'][] = $o;
+						$ret[$pkey]['orders'][] = $o;
 					}
 				}
 			}
@@ -209,31 +245,33 @@ class Turn extends BaseTurn implements iTurn {
 	 **/
 	protected function resolveOrders() {
 		// Limit our iterations to territories in play
-		$ters = $this->getTerritoryOrderMap(false); // false to skip failed orders
-		foreach ($ters as $t_id=>&$map) {
-			$s     = $map['state'];
+		$states = $this->getStateOrderMap(false); // false to skip failed orders
+		foreach ($states as &$map) {
+			$state = $map['state'];
 			$tally = $map['tally'];
 
 			foreach ($map['orders'] as &$o) {
 				if ($o->failed()) continue;
 
 				if ($o instanceof Move) {
-					if ($o->getDest() == $s) {
+					if ($o->getDest() == $state) {
 						$tally->inc($o->getEmpire());
 					}
 				} elseif ($o instanceof Support) {
-					if ($o->getDest()->getTerritory() == $s->getTerritory()) {
+					if ($o->getDest()->getTerritory() == $state->getTerritory()) {
 						$tally->inc($o->getSupporting());
 					}
+				} elseif ($o instanceof Retreat) {
+					// Nothing to do
 				} else {
 					trigger_error("Not sure how to perform <". get_class($o). "> $o");
 				}
 			}
-		}
+		} unset($state); // Precaution
 
-		foreach ($ters as $t_id=>&$map) {
+		foreach ($states as &$map) {
 			// Find the winner of each territory
-			$t = $map['state'];
+			$state = $map['state'];
 			$winner = $map['tally']->findWinner()->winner();
 
 			if (is_null($winner)) {
@@ -246,23 +284,25 @@ class Turn extends BaseTurn implements iTurn {
 			foreach ($map['orders'] as &$o) {
 				if ($o->failed()) continue;
 				if ($o instanceof Move) {
-					if ($o->getDest() == $t && $o->getEmpire() != $winner) {
-						$o->fail("Lost battle for ". $t->getTerritory(). " to $winner");
+					if ($o->getDest() == $state && $o->getEmpire() != $winner) {
+						$o->fail("Lost battle for ". $state->getTerritory(). " to $winner");
 					}
 				} elseif ($o instanceof Support) {
-					if ($o->getDest() == $t && $o->getSupporting() != $winner) {
-						$o->fail("Supported ". $o->getSupporting() . " in failed campaign against ". $t->getTerritory(). " that $winner won");
+					if ($o->getDest() == $state && $o->getSupporting() != $winner) {
+						$o->fail("Supported ". $o->getSupporting() . " in failed campaign against ". $state->getTerritory(). " that $winner won");
 					}
+				} elseif ($o instanceof Retreat) {
+					// Nothing to do
 				} else {
 					trigger_error("Not sure how to perform <". get_class($o) . ">$o");
 				}
 			}
-		}
+		} unset($state); // Precaution
 
 		// Debug
 		print "\n";
 		print "Resolutions before retreats:\n";
-		foreach ($ters as $t_id=>&$map) {
+		foreach ($states as &$map) {
 			print $map['state']->getTerritory(). ", tally:\n";
 			print $map['tally'];
 			print "\n";
@@ -270,38 +310,172 @@ class Turn extends BaseTurn implements iTurn {
 
 		// Determine required retreats.  Go through the resolutions, and find all
 		// occupiers who are not the winners
-		$retreats = array();
-		foreach ($ters as $t_id=>&$map) {
-			$s = $map['state'];
+		$retreats = new ResolutionResult;
+		foreach ($states as &$map) {
+			$state = $map['state'];
 			$winner = $map['tally']->winner();
 
 			if (is_null($winner)) continue;
 
-			if ($t->getOccupier() != $winner) {
-				$retreats[] = array('territory' => $s->getTerritory(), 'empire' => $t->getOccupier(), 'winner' => $winner);
+			if ($state->getOccupier() != $winner) {
+				// Territory, loser, winner
+				$retreats->addRequiredRetreat($state->getTerritory(), $state->getOccupier(), $winner);
+			}
+		} unset($state); // Precaution
+
+		$orders = $this->getOrders();
+		foreach ($orders as $o) {
+			$o = Order::downCast($o);
+			if ($o instanceof Retreat) {
+				$retreats->addRetreat($o);
 			}
 		}
+		$retreats->resolveRetreats();
 
-		// Debug, move to a function later or something.
-		if (count($retreats)) {
-			print "\nRequired Retreats!\n";
-			foreach ($retreats as $arr) {
-				print "{$arr['territory']} {$arr['empire']} must retreat due to $winner's victory.\n";
-			}
-		} else {
-			print "No retreats required.\n";
+		// Debug
+		print "[Turn:resolveOrders]\n";
+		print $retreats;
+
+		// TODO Try to "Resolve" some retreats (any units we can kill off?)
+
+		if ($retreats->getStatus() == ResolutionResult::RETREATS_REQUIRED) {
+			$this->setStatus('require_retreats');
+			$this->save();
+			return $retreats;
 		}
-		print "\n";
 
+		if ($retreats->getStatus() == ResolutionResult::SUCCESS) {
+			$this->setStatus('ready-to-execute');
+			$this->save();
+		}
+
+		return $retreats;
 	}
 
+	/**
+	 * Not sure what I intended for this function */
 	function resolveRetreats() {
 
 	}
 
 
+	/**
+	 * Actually execute the orders.
+	 */
 	function carryOutOrders() {
+		if ($this->getStatus() != 'ready-to-execute') {
+			throw new InvalidStateToExecute("State is ". $this->getState() . ", must be 'ready-to-execute'");
+		}
 
+		// First, create the "next" turn, and clone the state
+		$nextTurn = $this->initiateNextTurn();
+
+		// Orders would already be validated by this point, so no need to ensure
+		// that territories are adjacent
+
+		// --------------------------
+		// Move & Retreat orders
+
+global $config; $config->system->db->useDebug(true);
+		$orders = OrderQuery::create()
+			->filterByTurn($this)
+			->filterByDescendantClass('%Retreat', Criteria::LIKE)
+			->_or()
+			->filterByDescendantClass('%Move', Criteria::LIKE)
+			->find();
+global $config; $config->system->db->useDebug(false);
+		foreach ($orders as $o) {
+			$o = Order::downCast($o);
+			print "Executing $o\n";
+
+			// It must move to a space to	which it could ordinarily move if unopposed
+			// by other units; that is, to an adjacent space suitable to an army
+			// or fleet, as the case may be. The unit may not retreat, however, to
+			// any space which is occupied, nor to the space its attacker came
+			// from, nor to a space which was left vacant due to a standoff on the
+			// move. If no place is available for retreat, the dislodged unit is
+			// "disbanded"; that is, its marker is removed from the board.
+			// http://diplom.org/Zine/F1995R/Loeb/rules.html
+
+			// // Presumably, the order has been checked to see if the destination
+			// // is occupied.  BUT, if two armies retreat to the same place, they
+			// // are both disbanded.
+
+			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
+			$nextSourceState->setOccupation();
+
+			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
+			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnit());
+
+			$o->addToTranscript('Executed');
+		}
+
+		// --------------------------
+		// Disband orders
+
+		$orders = OrderQuery::create()->filterByTurn($this)->filterByDescendantClass('%Disband', Criteria::LIKE)->find();
+		foreach ($orders as $o) {
+			$o = Order::downCast($o);
+			print "Executing $o\n";
+
+			// This move can be over a convoy, whether that's valid will have
+			// been determined before now.
+
+			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
+			$nextSourceState->setOccupation();
+
+			$o->addToTranscript('Executed');
+		}
+
+		// --------------------------
+		// Support, Conoy, Hold orders
+
+		// Nothing to do..
+
+		$this->save();
+		$nextTurn->save();
+
+		$this->setStatus('complete');
+	}
+
+	/**
+	 * Get the state for territory $t in the next turn
+	 *
+	 * return State
+	 **/
+	public function getTerritoryNextState(TerritoryTemplate $t) {
+		$nextState = StateQuery::create()
+			->filterByMatch($this->getMatch())
+			->filterByTurn($this->getMatch()->getNextTurn())
+			->filterByTerritory($t)
+			->findOne();
+		return $nextState;
+	}
+
+	/**
+	 * Initialize the next turn.  Create a new turn, point this match
+	 * to it, and copy over the CURRENT state
+	 */
+	public function initiateNextTurn() {
+		global $config;
+//$config->system->db->useDebug(true);
+		$nextTurn = Turn::create($this->getMatch(), $this);
+		$sql = "INSERT INTO match_state "
+			. " (match_id, turn_id, territory_id, occupier_id, unit) "
+			." SELECT :match_id_static, :next_turn_id, territory_id, occupier_id, unit "
+			."  FROM match_state "
+			." WHERE match_id = :match_id AND turn_id = :current_turn_id ";
+		$stmt = $config->system->db->prepare($sql);
+		$stmt->execute(array(
+			':match_id_static' => $this->getMatch()->getPrimaryKey(),
+			':next_turn_id'    => $nextTurn->getPrimaryKey(),
+			':match_id'        => $this->getMatch()->getPrimaryKey(),
+			':current_turn_id' => $this->getPrimaryKey(),
+		));
+
+		$nextTurn->reload();
+		$this->getMatch()->setNextTurn($nextTurn);
+		return $nextTurn;
 	}
 
 	public function printOrders() {
@@ -322,5 +496,119 @@ class Turn extends BaseTurn implements iTurn {
 
 
 }
+
+/**
+ * Small data structure to contain and export the required retreats data
+ */
+class ResolutionResult extends \ArrayObject {
+	const RETREATS_REQUIRED = 1;
+	const SUCCESS = 2;
+	const UNINIT = -1;
+
+	protected $required_retreats;
+	protected $retreats;
+
+	public function __construct() {
+		$this->required_retreats = array();
+		$this->retreats = array();
+	}
+
+	public function count() {
+		return count($this->required_retreats);
+	}
+	public function append($val) {
+		parent::append($val);
+	}
+
+	public function addRequiredRetreat(TerritoryTemplate $terr, Empire $loser, Empire $winner) {
+		$this->required_retreats[] = array('territory' => $terr, 'winner' => $winner, 'loser' => $loser);
+	}
+
+	public function addRetreat(Retreat $o) {
+		$this->retreats[] = $o;
+	}
+
+	/**
+	 * Check to see if the required retreats have been satisfied.  If so,
+	 * remove it from the required list.
+	 */
+	public function resolveRetreats() {
+		$missing_retreats = array();
+		foreach ($this->required_retreats as $rr) {
+			if (!$this->findRequiredRetreatPair($rr)) {
+				$missing_retreats[] = $rr;
+			}
+		}
+		$this->required_retreats = $missing_retreats;
+	}
+
+	/**
+	 * Loop through the retreat orders, if we have one that satisfies
+	 * a required retreat, then return true.
+	 */
+	protected function findRequiredRetreatPair($rr) {
+		foreach ($this->retreats as $retreat) {
+			if ($rr['territory'] == $retreat->getSource()->getTerritory()
+				  && $rr['loser'] == $retreat->getEmpire()) {
+				// Got a match!
+print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['loser']}\n";
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Export to a simple array for the purposes of easily
+	 * serializing the structure into JSON
+	 */
+	public function __toArray() {
+		$ret = array(
+			'code' => $this->status,
+			'status' => $this->statusStromg(),
+			'requiredRetreats' => array(), // figure out structure later
+		);
+	}
+
+	public function getStatus() {
+		if (count($this->required_retreats))
+			return self::RETREATS_REQUIRED;
+		else
+			return self::SUCCESS;
+	}
+
+	/**
+	 * Getter for the status, but returns a string
+	 * (the status name)
+	 */
+	public function statusString() {
+		switch ($this->getStatus()) {
+		case self::RETREATS_REQUIRED:
+			return 'Retreats Required';
+		case self::SUCCESS:
+			return 'Orders resolved';
+		default:
+			return 'Uninitialized';
+		}
+	}
+
+	/**
+	 * Mostly a debug function.
+	 */
+	public function __toString() {
+		$str = '';
+		$str = 'Status: ' . $this->statusString() . "\n";
+		foreach ($this->required_retreats as $arr) {
+			$str .= "{$arr['territory']} {$arr['loser']} must retreat due to {$arr['winner']}'s victory.\n";
+		}
+		$str .= "\n";
+		return $str;
+	}
+}
+
+class TurnException extends \Exception {};
+class InvalidStateToExecute extends TurnException {}; // append Exception
+class TurnClosedToOrdersException extends TurnException {};
+class TurnNotCompleteException extends TurnException {};
 
 // vim: ts=3 sw=3 noet :

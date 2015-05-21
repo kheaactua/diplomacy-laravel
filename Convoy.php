@@ -16,5 +16,16 @@ use DiplomacyOrm\Base\Convoy as BaseConvoy;
  */
 class Convoy extends BaseConvoy
 {
+	use StaticOrderMethods;
 
+	protected static $cmd = 'CONVOY';
+	protected static $format = '%empire% %cmd% %source%-%dest%';
+	protected static $formatRe = '/(CONVOY)\s+([^-]+)-(.*)/';
+
+
+	public function getActiveStates() {
+		return array($this->getSource(), $this->getMiddle(), $this->getDest());
+	}
 }
+
+// vim: ts=3 sw=3 noet :

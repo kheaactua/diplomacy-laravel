@@ -43,9 +43,33 @@ class State extends BaseState {
 			return sprintf("[Turn: %s] Territory %s occupied by %s's %s", $this->getTurn(), $this->getTerritory(), $this->getOccupier(), $this->getUnit());
 	}
 
-	public function setOccupation(iEmpire $occupier, Unit $unit) {
+	public function setOccupation(iEmpire $occupier = null, $unit = null) {
 		$this->setOccupier($occupier);
-		$this->setUnit($unit->enum());
+		$this->setUnit($unit);
+	}
+
+	public function setUnit($v) {
+		if (is_null($v))
+			$unit_str = 'none';
+		elseif ($v instanceof Unit)
+			$unit_str = $v->enum();
+		elseif (is_string($v))
+			$unit_str = $v;
+		else
+			trigger_error('Do not understand input to unit.');
+
+		parent::setUnit($unit_str);
+	}
+
+	/**
+	 * Returns true if an empire occupies the territory, easy
+	 * (and more consistant) than testing if occupier is null
+	 * or is an object, or isa something..
+	 *
+	 * @return bool
+	 */
+	public function isOccupied() {
+		return !is_null($this->getOccupier());
 	}
 
 	public function getType() { return parent::getType(); }

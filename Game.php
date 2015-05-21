@@ -88,7 +88,7 @@ class Game extends BaseGame {
 	 * @throws TerritoryMatchException
 	 */
 	public function lookupTerritory($str, Match $match = null, Empire $empire = null) {
-global $config; $config->system->db->useDebug(true);
+//global $config; $config->system->db->useDebug(true);
 		$query = StateQuery::create();
 		if($match instanceof Match && $empire instanceof Empire) {
 			// Can't use _if/_endif because it would still attempt
@@ -106,7 +106,7 @@ global $config; $config->system->db->useDebug(true);
 		;
 
 		$ts = $query->find();
-$config->system->db->useDebug(false);
+//$config->system->db->useDebug(false);
 		if (count($ts) == 1) {
 			return $ts[0];
 		} elseif (count($ts) > 1) {

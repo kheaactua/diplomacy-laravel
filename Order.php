@@ -90,9 +90,13 @@ class Order extends BaseOrder {
 
 	/** Marks the order as failed */
 	public function fail($reason='') {
-		if (strlen($reason))
-			$this->setTranscript($this->getTranscript() . "\n" . $reason);
+		$this->addToTranscript($reason);
 		$this->setStatus('failed');
+	}
+
+	public function addToTranscript($str = '') {
+		if (strlen($str))
+			$this->setTranscript($this->getTranscript() . "\n" . $str);
 	}
 
 	/**
@@ -121,7 +125,7 @@ class Order extends BaseOrder {
 	 *
 	 * @return array(State, ...)
 	 **/
-	public function getTerritories() {
+	public function getActiveStates() {
 		return array($this->getSource());
 	}
 
@@ -136,7 +140,7 @@ class Order extends BaseOrder {
 
 		// Collect all the order types
 		// Slow, might want to hard code this...
-		$subclasses = array('Move', 'Support', 'Hold', 'Disband', 'Convoy');
+		$subclasses = array('Move', 'Support', 'Hold', 'Disband', 'Convoy', 'Retreat');
 
 		// First word should always be the order
 		if (preg_match('/^(\w+)\s/', $command, $matches)) {
@@ -144,7 +148,7 @@ class Order extends BaseOrder {
 
 			foreach ($subclasses as $sc) {
 				$sc = __NAMESPACE__."\\$sc";
-print "[$sc] orderCmd=". call_user_func(array($sc, 'getOrderCommand')) . " == $cmd\n";
+// print "[$sc] orderCmd=". call_user_func(array($sc, 'getOrderCommand')) . " == $cmd\n";
 				if (strcasecmp(call_user_func(array($sc, 'getOrderCommand')), $cmd) === 0) {
 					// Found our delegate!
 					return $sc::interpretText($command, $match, $empire);
@@ -164,6 +168,8 @@ print "[$sc] orderCmd=". call_user_func(array($sc, 'getOrderCommand')) . " == $c
 		if ($o->hasChildObject()) {
 			//print "Downcasting to ". $o->getDescendantClass() . "\n";
 			return $o->getChildObject();
+		} else {
+			return $o;
 		}
 	}
 }

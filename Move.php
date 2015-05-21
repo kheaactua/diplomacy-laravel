@@ -88,7 +88,7 @@ class Move extends BaseMove implements MultiTerritory {
 		}
 	}
 
-	public function getTerritories() {
+	public function getActiveStates() {
 		return array($this->getSource(), $this->getDest());
 	}
 }

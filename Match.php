@@ -17,19 +17,6 @@ use DiplomacyEngine\Unit;
  */
 class Match extends BaseMatch {
 
-	// Pointer to current turn
-	protected $currentTurn;
-
-	public function __construct() {
-		if ($this->getMatchId()) {
-			// If we're an object.. Set the currentTurn
-			$c = new \Propel\Runtime\ActiveQuery\Criteria;
-			$c->addDescendingOrderByColumn(TurnTableMap::COL_CREATED_ON);
-			$turns = $this->getTurns(null, $c);
-			$this->currentTurn = $turns[0];
-		}
-	}
-
 	/**
 	 * New match.
 	 * @param $name Name of the match/map
@@ -43,7 +30,7 @@ class Match extends BaseMatch {
 
 		// Create the first turn
 		$turn = Turn::create($m);
-		$m->currentTurn=$turn;
+		$m->setCurrentTurn($turn);
 
 		// Copy over the territories to our first state
 		$tts = $game->getGameTerritories();
@@ -54,40 +41,17 @@ class Match extends BaseMatch {
 		return $m;
 	}
 
-	/*
-	 * These are for the game
-	 *
-	public function addEmpire(iEmpire $empire) { return parent::addEmpure($empire); }
-	public function setEmpires(array $empires) {
-		foreach ($empires as $e)
-			$this->addEmpire($e);
-	}
-	 */
-
 	/**
 	 * Create a new turn and point currentTurn at it
 	 */
 	public function next() {
-		$turn = Turn::create($this, $this->currentTurn);
-		$m->currentTurn=$turn; // Pointer to current turn
+		if ($this->getCurrentTurn()->getStatus() == 'complete') {
+			$this->setCurrentTurn($this->getNextTurn());
+			$this->setNextTurn(null);
+		} else {
+			throw new TurnNotCompleteException("Current turn currently has a status of '". $this->getCurrentTurn()->getStatus() . "', cannot proceed.");
+		}
 	}
-
-	public function getCurrentTurn() {
-		return $this->currentTurn;
-	}
-
-	/**
-	 * Another init function: Will copy the territories for a Game into the
-	 * match state table
-	 */
-	/*
-	public function setTerritories(array $territories) {
-		$this->territories = $territories;
-	}
-	public function getTerritories() {
-		return $this->territories;
-	}
-	*/
 
 	/*
 	public function state() {
@@ -102,9 +66,9 @@ class Match extends BaseMatch {
 	public function __toString() {
 		$str = '';
 		$str .= $this->getName().": ";
-		$str .= $this->currentTurn . "\n";
+		$str .= $this->getCurrentTurn() . "\n";
 
-		$states = StateQuery::create()->filterByMatch($this)->filterByTurn($this->currentTurn);
+		$states = StateQuery::create()->filterByMatch($this)->filterByTurn($this->getCurrentTurn());
 
 		$str .= str_pad('Territory', 30) . str_pad('Empire', 12) . str_pad('Unit', 10) . "\n";
 		$str .= str_pad('', 29, '-') . ' ' . str_pad('', 11, '-') . ' '. str_pad('', 10, '-') . "\n";

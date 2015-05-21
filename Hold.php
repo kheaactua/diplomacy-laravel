@@ -16,5 +16,11 @@ use DiplomacyOrm\Base\Hold as BaseHold;
  */
 class Hold extends BaseHold
 {
+	use StaticOrderMethods;
+
+	protected static $cmd = 'HOLD';
+	protected static $format = '%empire% %cmd% %source%';
+	protected static $formatRe = '/(HOLD)\s+([^-]+)-(.*)/';
+
 
 }

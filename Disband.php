@@ -16,5 +16,9 @@ use DiplomacyOrm\Base\Disband as BaseDisband;
  */
 class Disband extends BaseDisband
 {
+	use StaticOrderMethods;
 
+	protected static $cmd = 'DISBAND';
+	protected static $format = '%empire% %cmd% %source%';
+	protected static $formatRe = '/(DISBAND)\s+([^-]+)-(.*)/';
 }
