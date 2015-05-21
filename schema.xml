@@ -25,12 +25,23 @@
 	<table name="game_match" phpName="Match">
 		<column name="game_id" type="integer" />
 		<column name="match_id" type="integer" primaryKey="true" autoIncrement="true" />
-		<column name="name" type="varchar" size="150" required="true" />
+		<column name="name" type="varchar" size="150" required="true" description="Name of the game instance" />
 		<column name="created_on" type="timestamp" />
 		<column name="updated_at" type="timestamp" />
 
+		<column name="current_turn_id" type="integer" description="Pointer to the current turn" />
+		<column name="next_turn_id"    type="integer" description="Pointer to the next turn" />
+
 		<foreign-key foreignTable="game" onDelete="CASCADE">
 			<reference local="game_id" foreign="game_id" />
+		</foreign-key>
+
+		<foreign-key foreignTable="turn" phpName="CurrentTurn" onDelete="CASCADE">
+			<reference local="current_turn_id" foreign="turn_id" />
+		</foreign-key>
+
+		<foreign-key foreignTable="turn" phpName="NextTurn" onDelete="CASCADE">
+			<reference local="next_turn_id" foreign="turn_id" />
 		</foreign-key>
 
 		<behavior name="timestampable">
@@ -43,17 +54,16 @@
 		<column name="match_id" type="integer" />
 		<column name="turn_id" type="integer" primaryKey="true" autoIncrement="true" />
 
-		<column name="name" type="varchar" size="150" required="true" description="Name of the game instance" />
 		<column name="step" type="integer" required="true" default="0" />
 
-		<column name="state" type="enum" valueSet="open,require_retreats,complete" default="open" />
+		<column name="status" type="enum" valueSet="open,require_retreats,ready-to-execute,complete" default="open" />
 
 		<column name="created_on" type="timestamp" />
 		<column name="updated_at" type="timestamp" />
 
 		<column name="transcript" type="longvarchar" required="false" description="Full transcript of the orders that are executed in this turn" />
 
-		<foreign-key foreignTable="game_match" refPhpName="MatchTurn" onDelete="CASCADE">
+		<foreign-key foreignTable="game_match" phpName="Match" onDelete="CASCADE">
 			<reference local="match_id" foreign="match_id" />
 		</foreign-key>
 
@@ -84,6 +94,16 @@
 	</table>
 
 	<table name="order_move" phpName="Move">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
+		<column name="dest_id" type="integer" description="Source destination of order" />
+		<foreign-key foreignTable="match_state" phpName="Dest" onDelete="CASCADE">
+			<reference local="dest_id" foreign="state_id" />
+		</foreign-key>
+	</table>
+
+	<table name="order_retreat" phpName="Retreat">
 		<behavior name="concrete_inheritance">
 			<parameter name="extends" value="empire_order" />
 		</behavior>
