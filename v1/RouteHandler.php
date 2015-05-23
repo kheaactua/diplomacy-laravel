@@ -16,7 +16,8 @@ class RouteHandler {
 	}
 
 	public function defaultRoute() {
-		$resp = new Response(Responce::INVALID_ROUTE, 'Cannot find route on '. get_class($this));
+		$resp = new Response(Response::INVALID_ROUTE, 'Cannot find route on '. get_class($this));
+		return $resp->__toArray();
 	}
 }
 

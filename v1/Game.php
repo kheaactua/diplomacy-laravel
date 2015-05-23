@@ -1,21 +1,14 @@
 <?php
 
-use Propel\Runtime\ActiveQuery\Criteria;
-
 namespace DiplomacyEngineRestApi\v1;
 
+use Propel\Runtime\ActiveQuery\Criteria;
+use DiplomacyOrm\GameQuery;
+
 class Game extends RouteHandler {
-	protected $orderConf;
-
-	public function __construct() {
-		parent::__construct();
-
-	}
-
 	/**
 	 * Lists all the available games to start
 	 *
-	 * @param array $putData User data an an array
 	 * @return array Array of game IDs and titles
 	**/
 	public function doGetGames() {
@@ -23,7 +16,7 @@ class Game extends RouteHandler {
 
 		$resp = new Response();
 
-		$games = GameQuery::find();
+		$games = GameQuery::create()->find();
 		foreach ($games as $g) {
 			$resp->data[] = array('game_id' => $g->getPrimaryKey(), $g->getName());
 		}
