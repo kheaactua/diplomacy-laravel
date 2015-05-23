@@ -109,7 +109,15 @@ class Order extends BaseOrder {
 		return $this->getEmpire();
 	}
 
-	public function validate() {
+	/**
+	 * Validate the order.  This method has two modes, light and full.
+	 * Light validation will ensure that the acting empire has permission
+	 * and perhaps a few other things - syntax will have been checked
+	 * before this point.
+	 *
+	 * @return bool Whether the order is good
+	 */
+	public function validate($full = true) {
 		if ($this->failed()) return false;
 
 		// Does the empire own the source territory
@@ -177,4 +185,4 @@ class Order extends BaseOrder {
 class OrderException extends \Exception { };
 class InvalidOrderException extends OrderException { };
 
-// vim: ts=3 sw=3 noet :
+// vim: ts=3 sw=3 noet colorscheme=moss :
