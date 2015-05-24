@@ -8,54 +8,40 @@ use DiplomacyOrm\TerritoryTemplateQuery;
 class Territory extends RouteHandler {
 
 	/**
-	 * I find my self doing this in almost every function, so
-	 * just get it done.
+	 * Little getter similar to the one in Match
 	 *
 	 * Does not catch any exceptions
-	 * @param int $match_id
+	 * @param int $territory_id
 	 * @param intent(INOUT) Response& Response
-	 * @return Match If no match was found, return null and fail the response appropriately
+	 * @return Match If no TerritoryTempalte was found, return null and fail the response appropriately
 	 */
-	protected function getMatch($match_id, &$response) {
-		$match = MatchQuery::create()->findPk($match_id);
-		if (!($match instanceof MatchOrm)) {
-			$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
+	protected function getTerritoryTemplate($territory_id, &$response) {
+		$t = TerritoryTemplateQuery::create()->findPk($territory_id);
+		if (!($t instanceof TerritoryTemplate)) {
+			$resp->fail(Response::INVALID_MATCH, "Invalid territory $territory_id");
 			return null;
 		}
-		return $match;
-	}
-
-	/**
-	 * Getter for empire
-	 *
-	 * Does not catch any exceptions
-	 * @param int $empire_id
-	 * @param Match $match
-	 * @param intent(INOUT) Response& Response
-	 * @return Match If no match was found, return null and fail the response appropriately
-	 */
-	protected function getEmpire($empire_id, $match, &$response) {
-		$match = MatchQuery::create()->findPk($match_id);
-		if (!($match instanceof MatchOrm)) {
-			$resp->fail(Response::INVALID_MATCH, "Invalid empire $match_id");
-			return null;
-		}
-		return $match;
+		return $t;
 	}
 
 	/**
 	 * Get a list of all the matches in the DB.  Maybe later
 	 * filter them by "active" or whatever.
 	 *
-	 * return array array(array(match_id, match_name, created, last_updated, game_id))
+	 * @param int $territory_id ID
+	 * return array array('territory_name' =>, ..., 'neighbours' => array())
 	 */
-	public function doGetMatches() {
+	public function doGetTerritory($territory_id) {
 		$this->mlog->debug('['. __METHOD__ .']');
 		$resp = new Response();
-		$matches = MatchQuery::create()->find();
-		$resp->data = array();
-		foreach ($matches as $match) {
-			$resp->data[] = $match->__toArray();
+
+		$tt = $this->getTerritoryTemplate($territory_id, $resp);
+		if (is_null($tt)) return $resp;
+
+		$resp->data = array('territory' => $tt->__toArray(), 'neighbours' => array());
+		$neighbours = $tt->getNeighbours();
+		foreach ($neighbours as $n) {
+			$resp->data['neighbours'][] = $n->__toArray();
 		}
 		return $resp->__toArray();
 	}
