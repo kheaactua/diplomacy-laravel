@@ -49,10 +49,12 @@ class Game extends BaseGame {
 		foreach ($objs as $obj) {
 			$t = TerritoryTemplate::create($obj->name, $obj->type, false); // TODO fix supply center
 
+//global $config; $config->system->db->useDebug(true);
 			$empire = EmpireQuery::create()->filterByGame($this)->filterByAbbr($obj->empire_start)->findOne();
 			if ($empire instanceof Empire) {
 				$t->setInitialOccupation($empire, new Unit($obj->starting_forces));
 			}
+//$config->system->db->useDebug(false);
 
 			$this->addGameTerritory($t);
 			$t->save();

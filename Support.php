@@ -76,6 +76,7 @@ class Support extends BaseSupport implements MultiTerritory {
 			// }
 
 			// Match ally
+// global $config; $config->system->db->useDebug(true);
 			$ally = EmpireQuery::create()->filterByGame($match->getGame())
 				->filterByAbbr($matches[2])
 				->_or()
@@ -84,6 +85,7 @@ class Support extends BaseSupport implements MultiTerritory {
 				->filterByNameShort($matches[2])
 				->findOne()
 			;
+// $config->system->db->useDebug(false);
 // print "ally = ". get_class($ally) . "\n";
 			if (!($ally instanceof Empire)) {
 				throw new InvalidOrderException("Cannot match ally {$matches[2]}");
