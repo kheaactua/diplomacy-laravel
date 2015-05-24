@@ -114,25 +114,15 @@ class Match extends RouteHandler {
 		$resp = new Response();
 
 		try {
-			do {
-				$match = MatchQuery::create()->findPk($match_id);
-				if (!($match instanceof MatchOrm)) {
-					$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
-					break;
-				}
-				$empire = EmpireQuery::create()
-					->filterByGame($match->getGame())
-					->filterByPrimaryKey($empire_id)
-					->findOne();
-				if (!($empire instanceof Empire)) {
-					$resp->fail(Response::INVALID_EMPIRE, "Invalid empire $empire_id");
-					break;
-				}
-				$order = Order::interpretText($order_str, $match, $empire);
+			$order = $this->validateOrder($match_id, $empire_id, $order_str, $resp, $match, $empire);
+
+			if ($order instanceof $order && !$order->failed()) {
 				$match->getCurrentTurn()->addOrder($order);
 				$resp->msg = "Order <<<$order>>> added";
 				$resp->data=true;
-			} while (false);
+			} else
+				$resp->data=false;
+
 		} catch (InvalidOrderException $ex) {
 			$resp->fail(Response::INVALID_ORDER, $ex->getMessage());
 		} catch (TurnException $ex) {
@@ -144,6 +134,46 @@ class Match extends RouteHandler {
 
 		return $resp->__toArray();
 	}
+
+	/**
+	 * Main workhorse behind doAddOrder and doValidate
+	 *
+	 * @param int $match_id Match
+	 * @param int $empire_id empire
+	 * @param string $order_str Order we're creating/validating
+	 * @param Response& $resp (intent(INOUT)) Response for this request
+	 * @param Match& $match (intent(OUT)) Will populate the match variable
+	 * @param Empire& $empire (intent(OUT)) Will populate the empire variable
+	 * @return Order
+	 * @throws Exception Passes along any exception it hits
+	 */
+	protected function validateOrder($match_id, $empire_id, $order_str, Response &$resp, &$match, &$empire) {
+		$order = null;
+		do {
+			$match = MatchQuery::create()->findPk($match_id);
+			if (!($match instanceof MatchOrm)) {
+				$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
+				break;
+			}
+			$empire = EmpireQuery::create()
+				->filterByGame($match->getGame())
+				->filterByPrimaryKey($empire_id)
+				->findOne();
+			if (!($empire instanceof Empire)) {
+				$resp->fail(Response::INVALID_EMPIRE, "Invalid empire $empire_id");
+				break;
+			}
+			$order = Order::interpretText($order_str, $match, $empire); // Order is not yet saved
+			$order->validate(false); // false for light validation
+			if ($order->failed()) {
+				$resp->fail(Response::INVALID_ORDER, $order->getTranscript());
+				break;
+			}
+			$resp->data=true;
+		} while (false);
+		return $order;
+	}
+
 
 	/**
 	 * Validates an order based on syntax and ownership.  Does not
@@ -161,28 +191,13 @@ class Match extends RouteHandler {
 		$resp = new Response();
 
 		try {
-			do {
-				$match = MatchQuery::create()->findPk($match_id);
-				if (!($match instanceof MatchOrm)) {
-					$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
-					break;
-				}
-				$empire = MatchQuery::create()
-					->filterByGame($match->getPrimaryKey())
-					->filterByPrimaryKey($empire_id)
-					->findOne();
-				if (!($empire instanceof Empire)) {
-					$resp->fail(Response::INVALID_EMPIRE, "Invalid empire $match_id");
-					break;
-				}
-				$order = Order::interpretText($order_str, $match, $empire); // Order is not yet saved
-				$order->validate(false); // false for light validation
-				if ($order->failed()) {
-					$resp->fail(Response::INVALID_ORDER, $order->getTranscript());
-					break;
-				}
-				$resp->data=true;
-			} while (false);
+			$order = $this->validateOrder($match_id, $empire_id, $order_str, $resp, $match, $empire);
+
+			if ($order instanceof $order)
+				$resp->data=!$order->failed();
+			else
+				$resp->data=false;
+
 		} catch (Exception $ex) {
 			$this->log->error('['. __METHOD__ .'] Caught exception: '. $e->getMessage());
 			$resp->fail(Response::UNKNONWN_EXCEPTION, 'An error occured, please try again later');
