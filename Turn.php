@@ -380,6 +380,7 @@ print "Result $retreats\n";
 
 		$orders = OrderQuery::create()
 			->filterByTurn($this)
+			->filterByStatus('succeeded')
 			->filterByDescendantClass('%Retreat', Criteria::LIKE)
 			->find();
 		foreach ($orders as $o) {
@@ -413,6 +414,7 @@ print "Result $retreats\n";
 
 		$orders = OrderQuery::create()
 			->filterByTurn($this)
+			->filterByStatus('succeeded')
 			->filterByDescendantClass('%Move', Criteria::LIKE)
 			->find();
 		foreach ($orders as $o) {
@@ -433,7 +435,10 @@ print "Result $retreats\n";
 		// --------------------------
 		// Disband orders
 
-		$orders = OrderQuery::create()->filterByTurn($this)->filterByDescendantClass('%Disband', Criteria::LIKE)->find();
+		$orders = OrderQuery::create()->filterByTurn($this)
+			->filterByStatus('succeeded')
+			->filterByDescendantClass('%Disband', Criteria::LIKE)
+			->find();
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
 			print "Executing $o\n";

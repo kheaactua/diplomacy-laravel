@@ -130,7 +130,9 @@ class Order extends BaseOrder {
 // TODO make exception for CONVOYS
 		if ($this->getSource()->getOccupier() != $this->getEmpire()) {
 			$this->fail($this->getEmpire() . " does not occupy ". $this->getSource()->getTerritory());
+			return false;
 		}
+		return true;
 	}
 
 	/**

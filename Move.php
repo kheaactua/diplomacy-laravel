@@ -44,6 +44,20 @@ class Move extends BaseMove implements MultiTerritory {
 		return $o;
 	}
 
+	/**
+	 * Validate the order.
+	 * @return bool Whether the order is good
+	 */
+	public function validate($full = true) {
+		$res = parent::Validate($full);
+		if (!$res) return $res;
+
+		if ($this->getSource()->getUnit() == 'fleet' && $this->getDest()->getTerritory()->getType() != 'water') {
+			$this->fail('Cannot move fleet out of water');
+			return false;
+		}
+	}
+
 	public function __toString() {
 		$str = $this->generateOrder(
 			array('empire', 'unit', 'cmd', 'source', 'dest'),
