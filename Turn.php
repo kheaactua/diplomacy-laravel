@@ -37,6 +37,7 @@ class Turn extends BaseTurn {
 	public static function create(Match $match, Turn $last_turn = null) {
 		$o = new Turn;
 		$o->setMatch($match);
+		$o->setStatus('open');
 
 		if ($last_turn instanceof Turn) {
 			$o->setStep($last_turn->getStep()+1);
@@ -458,6 +459,8 @@ print "Result $retreats\n";
 
 		// Move turn pointer to next turn
 		$this->getMatch()->next();
+
+		return new ResolutionResult;
 	}
 
 	/**

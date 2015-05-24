@@ -76,7 +76,14 @@ class Support extends BaseSupport implements MultiTerritory {
 			// }
 
 			// Match ally
-			$ally = EmpireQuery::create()->filterByGame($match->getGame())->findOneByAbbr($matches[2]);
+			$ally = EmpireQuery::create()->filterByGame($match->getGame())
+				->filterByAbbr($matches[2])
+				->_or()
+				->filterByName($matches[2])
+				->_or()
+				->filterByNameShort($matches[2])
+				->findOne()
+			;
 // print "ally = ". get_class($ally) . "\n";
 			if (!($ally instanceof Empire)) {
 				throw new InvalidOrderException("Cannot match ally {$matches[2]}");
