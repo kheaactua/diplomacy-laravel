@@ -53,7 +53,7 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 			if ($this->getStatus() === 'require_retreats' && $l instanceof Retreat) {
 				// Good
 			} else {
-				throw new TurnClosedToOrdersException($this . ' state is "'. $this->getStatus() .'", can only accept orders on "open" state');
+				throw new TurnClosedToOrdersException($this . ' status is "'. $this->getStatus() .'", can only accept orders on "open" state');
 			}
 		}
 		if (is_null($l->getUnit())) {

@@ -82,6 +82,21 @@ class Match extends BaseMatch {
 		return $str;
 	}
 
+	/** Mostly used for preparing an array to serialize into JSON
+	 * and sending to the client
+	 */
+	public function __toArray() {
+		$arr = array(
+			'match_id'   => $this->getPrimaryKey(),
+			'name'       => $this->getName(),
+			'turn'       => $this->getCurrentTurn(),
+			'game_id'    => $this->getGame()->getPrimaryKey(),
+			'game'       => $this->getGame()->getName(),
+			'created_on' => $this->getCreatedOn(),
+			'updated_at' => $this->getUpdatedAt(),
+		);
+		return $arr;
+	}
 }
 
 // vim: ts=3 sw=3 noet :
