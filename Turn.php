@@ -257,11 +257,11 @@ print "Result $retreats\n";
 
 				if ($o instanceof Move) {
 					if ($o->getDest() == $state) {
-						$tally->inc($o->getEmpire());
+						$tally->inc($o->getEmpire(), $o);
 					}
 				} elseif ($o instanceof Support) {
 					if ($o->getDest()->getTerritory() == $state->getTerritory()) {
-						$tally->inc($o->getSupporting());
+						$tally->inc($o->getSupporting(), $o);
 					}
 				} elseif ($o instanceof Retreat) {
 					// Nothing to do
@@ -639,29 +639,59 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 class PlayerMap {
 	protected $map;
 	protected $winner;
+	protected $original_occupier;
 	public function __construct(Empire $default = null) {
 		$this->map = array();
 
 		if (!is_null($default)) {
 //print "Adding default point to $default\n";
+			$this->original_occupier = $default;
 			$this->inc($default); // add starting 'defenders' point
 			$this->winner = $default; // Set as default winner
 		} else {
 			$this->winner = null;
 		}
 	}
-	public function inc(Empire $empire) {
+	public function inc(Empire $empire, Order $order = null) {
 		if (!array_key_exists($empire->getEmpireId(), $this->map))
-			$this->map[$empire->getEmpireId()] = array('tally' => 0, 'empire' => $empire);
+			$this->map[$empire->getEmpireId()] = array('tally' => 0, 'empire' => $empire, 'orders' => array(), 'lost' => false);
 
 //print "Incrementing $empire\n";
 		$this->map[$empire->getEmpireId()]['tally']++;
+		if (!is_null($order))
+			$this->map[$empire->getEmpireId()]['orders'][$order->getPrimaryKey()]=$order;
 	}
 	public function findWinner() {
+		// Iterate through the tallys, and see if any armies have tied.  Ties
+		// result in standoffs.  The one exception here is that ties with the
+		// current occupier yeild the current as the winner (or, aren't marked as
+		// losers here.)
+		foreach ($this->map as $empire_1_id=>&$arr1) {
+			foreach ($this->map as $empire_2_id=>&$arr2) {
+				if ($empire_1_id == $empire_2_id) continue;
+				if ($arr1['tally'] == $arr2['tally']) {
+					// We have a tie!
+					if ($empire_1_id == $this->original_occupier->getPrimaryKey()) {
+						foreach ($arr2['orders'] as $o) { $o->fail("Lost in tie to current occupier $this->original_occupier (e1)"); $o->save(); }
+						$arr2['lost'] = true;
+					} elseif ($empire_2_id == $this->original_occupier->getPrimaryKey()) {
+						foreach ($arr1['orders'] as $o) { $o->fail("Lost in tie to current occupier $this->original_occupier (e2)"); $o->save(); }
+						$arr1['lost'] = true;
+					} else {
+						foreach ($arr1['orders'] as $o) { $o->fail("Lost in stalemate to ". $arr2['empire'] . " (e3)"); $o->save(); }
+						foreach ($arr2['orders'] as $o) { $o->fail("Lost in stalemate to ". $arr1['empire'] . " (e4)"); $o->save(); }
+						$arr1['lost'] = true;
+						$arr2['lost'] = true;
+					}
+				}
+			}
+		}
+
+		// Now, find the winner.  Ignore any armies already marked as losers
 		$c = -1;
 		foreach ($this->map as $empire_id=>$arr) {
-			if ($arr['tally'] > $c) {
 //print "{$arr['empire']}={$arr['tally']} > $c\n";
+			if ($arr['lost'] !== true && $arr['tally'] > $c) {
 				$c = $arr['tally'];
 				$this->winner = $arr['empire'];
 			}
