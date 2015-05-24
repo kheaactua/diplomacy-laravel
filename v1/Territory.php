@@ -15,7 +15,7 @@ class Territory extends RouteHandler {
 	 * @param intent(INOUT) Response& Response
 	 * @return Match If no TerritoryTempalte was found, return null and fail the response appropriately
 	 */
-	protected function getTerritoryTemplate($territory_id, &$response) {
+	protected function getTerritoryTemplate($territory_id, &$resp) {
 		$t = TerritoryTemplateQuery::create()->findPk($territory_id);
 		if (!($t instanceof TerritoryTemplate)) {
 			$resp->fail(Response::INVALID_MATCH, "Invalid territory $territory_id");
