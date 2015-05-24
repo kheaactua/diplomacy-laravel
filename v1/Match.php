@@ -319,6 +319,9 @@ class Match extends RouteHandler {
 				$arr['unit'] = 'none';
 			}
 
+			// Don't need, but might be nice to have for debugging/fixing
+			$arr['state_id'] = $state->getPrimaryKey();
+
 			$territories[] = $arr;
 		}
 		$resp->data = $territories;
