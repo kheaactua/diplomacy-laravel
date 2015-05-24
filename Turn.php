@@ -23,9 +23,12 @@ use Propel\Runtime\ActiveQuery\Criteria;
 class Turn extends BaseTurn {
 	const dt = 2; // Timesteps per year.  Half of this is hard programmed in (Seasons)
 
-	// /** Array representing the territories (but not Territory objects) used
-	//  * to help resolve the fate of the Territory objects. */
-	// protected $territories;
+	protected $mlog;
+
+	public function __construct() {
+		global $MLOG;
+		$this->mlog = $MLOG;
+	}
 
 	/**
 	 * Constructs a new turn.
@@ -454,6 +457,9 @@ print "Result $retreats\n";
 		$nextTurn->save();
 
 		$this->setStatus('complete');
+
+		// Move turn pointer to next turn
+		$this->next();
 	}
 
 	/**

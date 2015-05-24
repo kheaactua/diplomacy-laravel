@@ -79,7 +79,7 @@ class Move extends BaseMove implements MultiTerritory {
 			}
 
 			try {
-				$dest = $match->getGame()->lookupTerritory($matches[4]);
+				$dest = $match->getGame()->lookupTerritory($matches[4], $match);
 			} catch (TerritoryMatchException $ex) {
 				throw new InvalidOrderException($ex->getMessage());
 			}
