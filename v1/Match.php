@@ -257,6 +257,38 @@ class Match extends RouteHandler {
 		return $resp->__toArray();
 	}
 
+	/**
+	 * Fetch the list of territories owned by an empire.
+	 *
+	 * @param int $match_id Match ID
+	 * @param int $empire_id Empire ID issuing the order
+	 * @return array array(TerritoryTemplate, ...)
+	 */
+	public function doGetEmpireTerritoryMap($match_id, $empire_id) {
+		$match = $this->getMatch($match_id, $resp);
+		if (is_null($match)) return $resp;
+		$empire = $this->getEmpire($empire_id, $match, $resp);
+		if (is_null($empire)) return $resp;
+
+
+		$states = StateQuery::create()
+			->filterByTurn($match->getCurrentTurn())
+			->filterByOccupier($empire)
+			->find()
+		;
+
+		$territories = array();
+		foreach ($states as $state) {
+			$territories[] = array(
+				'territory' => $state->getTerritory()->__toArray(),
+				'unit' => $state->getUnit(),
+			);
+		}
+		$resp->data = $territories;
+
+		return $resp->__toArray();
+	}
+
 }
 
 // vim: sw=3 sts=3 ts=3 noet :
