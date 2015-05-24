@@ -181,7 +181,7 @@
 		<column name="territory_id" type="integer" required="true" />
 
 		<column name="occupier_id" type="integer" description="Occupying empire" />
-		<column name="unit" type="enum" valueSet="army,fleet,none" description="Occupying unit. None + an empire means that the empire owns the territory, but who's unit is elsewhere." />
+		<column name="unit" type="enum" valueSet="army,fleet,vacant,none" description="Occupying unit. Vacant means an empire means that the empire owns the territory, but who's unit is elsewhere." />
 
 		<foreign-key foreignTable="game_match" onDelete="CASCADE">
 			<reference local="match_id" foreign="match_id" />
