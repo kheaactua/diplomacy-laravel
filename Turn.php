@@ -459,7 +459,7 @@ print "Result $retreats\n";
 		$this->setStatus('complete');
 
 		// Move turn pointer to next turn
-		$this->next();
+		$this->getMatch()->next();
 	}
 
 	/**

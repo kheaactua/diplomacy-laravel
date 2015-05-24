@@ -93,7 +93,7 @@ class Support extends BaseSupport implements MultiTerritory {
 			try {
 				// Cannot specify ally here to help the match, as the ally doesn't
 				// currently occupy the destination territory
-				$dest = $match->getGame()->lookupTerritory($matches[4]);
+				$dest = $match->getGame()->lookupTerritory($matches[4], $match);
 			} catch (TerritoryMatchException $ex) {
 				throw new InvalidOrderException($ex->getMessage());
 			}

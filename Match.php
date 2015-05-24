@@ -45,11 +45,13 @@ class Match extends BaseMatch {
 	 * Create a new turn and point currentTurn at it
 	 */
 	public function next() {
+		if ($this->getCurrentTurn()->getStatus() != 'complete')
+			throw new TurnNotCompleteException("Current turn currently has a status of '". $this->getCurrentTurn()->getStatus() . "', cannot proceed.");
+
+		print "next turn: ". gettype($this->getNextTurn()) . "\n";
 		if (!($this->getNextTurn() instanceof Turn))
 			throw new TurnNotCompleteException("No next turn has been initialized");
 
-		if ($this->getCurrentTurn()->getStatus() == 'complete')
-			throw new TurnNotCompleteException("Current turn currently has a status of '". $this->getCurrentTurn()->getStatus() . "', cannot proceed.");
 
 		// else ...
 		$this->setCurrentTurn($this->getNextTurn());
