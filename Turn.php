@@ -3,8 +3,6 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Turn as BaseTurn;
-use DiplomacyEngine\iTurn;
-use DiplomacyEngine\PlayerMap;
 use DiplomacyOrm\Move;
 use DiplomacyOrm\Support;
 
@@ -421,7 +419,7 @@ print "Result $retreats\n";
 			print "Executing $o\n";
 
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
-			$nextSourceState->setUnit('none'); // Keep occupying the territory, but the unit is moving
+			$nextSourceState->setUnit('vacant'); // Keep occupying the territory, but the unit is moving
 
 			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
 			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnit());
@@ -626,6 +624,55 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 			$str .= "{$arr['territory']} {$arr['loser']} must retreat due to {$arr['winner']}'s victory.\n";
 		}
 		$str .= "\n";
+		return $str;
+	}
+}
+
+/**
+ * Little helper class to add up the 'winners' on a territory during order
+ * resolution.  Implementing stuff here, instead of a bunch of array code
+ * in the resolution function
+ */
+class PlayerMap {
+	protected $map;
+	protected $winner;
+	public function __construct(Empire $default = null) {
+		$this->map = array();
+
+		if (!is_null($default)) {
+//print "Adding default point to $default\n";
+			$this->inc($default); // add starting 'defenders' point
+			$this->winner = $default; // Set as default winner
+		} else {
+			$this->winner = null;
+		}
+	}
+	public function inc(Empire $empire) {
+		if (!array_key_exists($empire->getEmpireId(), $this->map))
+			$this->map[$empire->getEmpireId()] = array('tally' => 0, 'empire' => $empire);
+
+//print "Incrementing $empire\n";
+		$this->map[$empire->getEmpireId()]['tally']++;
+	}
+	public function findWinner() {
+		$c = -1;
+		foreach ($this->map as $empire_id=>$arr) {
+			if ($arr['tally'] > $c) {
+//print "{$arr['empire']}={$arr['tally']} > $c\n";
+				$c = $arr['tally'];
+				$this->winner = $arr['empire'];
+			}
+		}
+		return $this;
+	}
+	public function winner() {
+		return $this->winner;
+	}
+	public function __toString() {
+		$str = '';
+		foreach ($this->map as $arr) {
+			$str .= str_pad($arr['empire'], 12) . ' ' . sprintf('%0.2d', $arr['tally']) . ($arr['empire'] == $this->winner ? ' (winner)':'') . "\n";
+		}
 		return $str;
 	}
 }

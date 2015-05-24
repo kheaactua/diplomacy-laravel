@@ -3,7 +3,6 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Move as BaseMove;
-use DiplomacyEngine\Unit;
 use DiplomacyEngine\MultiTerritory;
 
 /**

@@ -3,9 +3,6 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\State as BaseState;
-use DiplomacyEngine\iTerritory;
-use DiplomacyEngine\Unit;
-use DiplomacyEngine\iEmpire;
 
 /**
  * Skeleton subclass for representing a row from the 'match_state' table.
@@ -43,7 +40,7 @@ class State extends BaseState {
 			return sprintf("[Turn: %s] Territory %s occupied by %s's %s", $this->getTurn(), $this->getTerritory(), $this->getOccupier(), $this->getUnit());
 	}
 
-	public function setOccupation(iEmpire $occupier = null, $unit = null) {
+	public function setOccupation(Empire $occupier = null, $unit = null) {
 		$this->setOccupier($occupier);
 		$this->setUnit($unit);
 	}

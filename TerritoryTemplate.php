@@ -5,8 +5,6 @@ namespace DiplomacyOrm;
 use DiplomacyOrm\Base\TerritoryTemplate as BaseTerritoryTemplate;
 use DiplomacyOrm\Map\TerritoryTemplateTableMap;
 use DiplomacyEngine\iTerritory;
-use DiplomacyEngine\Unit;
-use DiplomacyEngine\iEmpire;
 
 /** Terrotory type, should use propel constants.
  * @deprecated */
@@ -77,7 +75,7 @@ class TerritoryTemplate extends BaseTerritoryTemplate {
 	 * Shortcut function, empire and unit always have to be set together,
 	 * so this function saves me from having to do it twice all the time
 	 */
-	public function setInitialOccupation(iEmpire $empire, Unit $unit) {
+	public function setInitialOccupation(Empire $empire, Unit $unit) {
 		parent::setInitialOccupier($empire);
 		parent::setInitialUnit($unit->enum());
 	}

@@ -3,7 +3,6 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Support as BaseSupport;
-use DiplomacyEngine\Unit;
 use DiplomacyEngine\MultiTerritory;
 
 /**

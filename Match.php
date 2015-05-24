@@ -3,7 +3,6 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Match as BaseMatch;
-use DiplomacyEngine\Unit;
 
 /**
  * Skeleton subclass for representing a row from the 'match' table.
