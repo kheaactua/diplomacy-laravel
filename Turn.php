@@ -690,8 +690,8 @@ class PlayerMap {
 		// Now, find the winner.  Ignore any armies already marked as losers
 		$c = -1;
 		foreach ($this->map as $empire_id=>$arr) {
-//print "{$arr['empire']}={$arr['tally']} > $c\n";
 			if ($arr['lost'] !== true && $arr['tally'] > $c) {
+//print "{$arr['empire']}={$arr['tally']} > $c\n";
 				$c = $arr['tally'];
 				$this->winner = $arr['empire'];
 			}
