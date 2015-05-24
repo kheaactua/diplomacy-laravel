@@ -56,6 +56,10 @@ class Move extends BaseMove implements MultiTerritory {
 			$this->fail('Cannot move fleet out of water');
 			return false;
 		}
+		if ($this->getSource()->getUnit() == 'army' && $this->getDest()->getTerritory()->getType() != 'land') {
+			$this->fail('Cannot move army into water');
+			return false;
+		}
 	}
 
 	public function __toString() {
