@@ -36,7 +36,21 @@ class Empire extends BaseEmpire implements iEmpire {
 		return $this->getId();
 	}
 
-
+	/**
+	 * Primarily used for outputting to JSON, rather than
+	 * a data structure that'll be pushed in and out of the DB
+	 *
+	 * @return array array('empire_id', 'name_official', ...);
+	 */
+	public function __toArray() {
+		return array(
+			'empire_id' => $this->getPrimaryKey(),
+			'abbr' => $this->getAbbr(),
+			'name' => $this->getName(),
+			'name_long' => $this->getNameLong(),
+			'name_short' => $this->getNameShort(),
+		);
+	}
 }
 
 // vim: ts=3 sw=3 noet :
