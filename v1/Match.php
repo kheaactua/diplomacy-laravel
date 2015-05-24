@@ -4,6 +4,12 @@ namespace DiplomacyEngineRestApi\v1;
 
 use DiplomacyOrm\Match as MatchOrm;
 use DiplomacyOrm\MatchQuery;
+use DiplomacyOrm\Empire;
+use DiplomacyOrm\EmpireQuery;
+use DiplomacyOrm\Order;
+use DiplomacyOrm\TurnException;
+use DiplomacyOrm\OrderException;
+use DiplomacyOrm\InvalidOrderException;
 
 class Match extends RouteHandler {
 
@@ -88,6 +94,97 @@ class Match extends RouteHandler {
 				$resp->data = $result;
 			} while (false);
 		} catch (Exception $ex) {
+			$resp->fail(Response::UNKNONWN_EXCEPTION, 'An error occured, please try again later');
+		}
+
+		return $resp->__toArray();
+	}
+
+	/**
+	 * Lists all the available games to start
+	 *
+	 * @param int $match_id Match ID
+	 * @param int $empire_id Empire ID issuing the order
+	 * @param string $order_str Order text
+	 * @return bool Whether the order was accepted
+	**/
+	public function doAddOrder($match_id, $empire_id, $order_str) {
+		$this->mlog->debug('['. __METHOD__ .']');
+
+		$resp = new Response();
+
+		try {
+			do {
+				$match = MatchQuery::create()->findPk($match_id);
+				if (!($match instanceof MatchOrm)) {
+					$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
+					break;
+				}
+				$empire = EmpireQuery::create()
+					->filterByGame($match->getGame())
+					->filterByPrimaryKey($empire_id)
+					->findOne();
+				if (!($empire instanceof Empire)) {
+					$resp->fail(Response::INVALID_EMPIRE, "Invalid empire $empire_id");
+					break;
+				}
+				$order = Order::interpretText($order_str, $match, $empire);
+				$match->getCurrentTurn()->addOrder($order);
+				$resp->msg = "Order <<<$order>>> added";
+				$resp->data=true;
+			} while (false);
+		} catch (InvalidOrderException $ex) {
+			$resp->fail(Response::INVALID_ORDER, $ex->getMessage());
+		} catch (TurnException $ex) {
+			$resp->fail(Response::TURN_ERROR, $ex->getMessage());
+		} catch (Exception $ex) {
+			$this->log->error('['. __METHOD__ .'] Caught exception: '. $e->getMessage());
+			$resp->fail(Response::UNKNONWN_EXCEPTION, 'An error occured, please try again later');
+		}
+
+		return $resp->__toArray();
+	}
+
+	/**
+	 * Validates an order based on syntax and ownership.  Does not
+	 * consider neighbouring territories, or what other players are
+	 * doing.
+	 *
+	 * @param int $match_id Match ID
+	 * @param int $empire_id Empire ID issuing the order
+	 * @param string $order_str Order text
+	 * @return bool Whether the order was accepted
+	**/
+	public function doValidate($match_id, $empire_id, $order_str) {
+		$this->mlog->debug('['. __METHOD__ .']');
+
+		$resp = new Response();
+
+		try {
+			do {
+				$match = MatchQuery::create()->findPk($match_id);
+				if (!($match instanceof MatchOrm)) {
+					$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
+					break;
+				}
+				$empire = MatchQuery::create()
+					->filterByGame($match->getPrimaryKey())
+					->filterByPrimaryKey($empire_id)
+					->findOne();
+				if (!($empire instanceof Empire)) {
+					$resp->fail(Response::INVALID_EMPIRE, "Invalid empire $match_id");
+					break;
+				}
+				$order = Order::interpretText($order_str, $match, $empire); // Order is not yet saved
+				$order->validate(false); // false for light validation
+				if ($order->failed()) {
+					$resp->fail(Response::INVALID_ORDER, $order->getTranscript());
+					break;
+				}
+				$resp->data=true;
+			} while (false);
+		} catch (Exception $ex) {
+			$this->log->error('['. __METHOD__ .'] Caught exception: '. $e->getMessage());
 			$resp->fail(Response::UNKNONWN_EXCEPTION, 'An error occured, please try again later');
 		}
 

@@ -13,6 +13,7 @@ class Response {
 	const INVALID_MATCH=-3;
 	const INVALID_EMPIRE=-5;
 	const INVALID_GAME=-4;
+	const TURN_ERROR=-50;
 
 	public $code;
 	public $msg;
