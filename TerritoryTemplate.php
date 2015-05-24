@@ -80,6 +80,18 @@ class TerritoryTemplate extends BaseTerritoryTemplate {
 		parent::setInitialUnit($unit->enum());
 	}
 
+	/**
+	 * Serialize the object into an array which can be converted to JSON easily
+	 */
+	public function __toArray() {
+		return array(
+			'territory_id' => $this->getPrimaryKey(),
+			'name' => $this->getName(),
+			'type' => $this->getType(),
+			'is_supply' => $this->getIsSupply()
+		);
+	}
+
 }
 
 // vim: ts=3 sw=3 noet :
