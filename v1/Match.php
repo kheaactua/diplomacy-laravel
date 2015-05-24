@@ -1,8 +1,9 @@
 <?php
 
-use Propel\Runtime\ActiveQuery\Criteria;
-
 namespace DiplomacyEngineRestApi\v1;
+
+use DiplomacyOrm\Match as MatchOrm;
+use DiplomacyOrm\MatchQuery;
 
 class Match extends RouteHandler {
 
@@ -26,6 +27,41 @@ class Match extends RouteHandler {
 			}
 		} catch (Exception $ex) {
 			$resp->fail(Response::UNKNONWN_EXCEPTION, 'An error occured, please try again later');
+		}
+
+		return $resp->__toArray();
+	}
+
+	/**
+	 * List the empires in the match.  This should be on the game, but
+	 * it's used more in the context of the match.
+	 *
+	 * @param int $match_id Match with the empires
+	 * @return array List of empire objects
+	 */
+	public function doGetEmpires($match_id) {
+		$this->mlog->debug('['. __METHOD__ .']');
+
+		$resp = new Response();
+
+		try {
+			$match = MatchQuery::create()->findPk($match_id);
+			if ($match instanceof MatchOrm) {
+				$empires = $match->getGame()->getEmpires();
+				$resp->data = array();
+				foreach ($empires as $empire) {
+					$resp->data[] = $empire->__toArray();
+				}
+				if (count($empires) == 0) {
+					$resp->fail(Response::NO_EMPIRES, 'No empires matches your query.  This is probably indicative of a larger issue.');
+				} else {
+					$resp->msg = "Empires in ". $match->getName() ."";
+				}
+			} else {
+				$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
+			}
+		} catch (Exception $ex) {
+			$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
 		}
 
 		return $resp->__toArray();
