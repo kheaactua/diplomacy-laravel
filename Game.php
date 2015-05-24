@@ -81,8 +81,8 @@ class Game extends BaseGame {
 	 *
 	 * @param $str Territory name, or abbreviation, or anything we put in
 	 *             the system that a user may use
-	 * @param Match Requires a match such that it can use the current turn, 
-	 *              without this several results (one per turn) will be returned 
+	 * @param Match Requires a match such that it can use the current turn,
+	 *              without this several results (one per turn) will be returned
 	 *              everytime
 	 * @param Empire Sometimes we can limit what territories might be
 	 *               being searched for by the empire.  In this case,
@@ -96,7 +96,7 @@ global $config; $config->system->db->useDebug(true);
 			->filterByTurn($match->getCurrentTurn())
 			->_if($empire instanceof Empire)
 				->filterByOccupier($empire)
-			->_endif() 
+			->_endif()
 			->join('State.Territory')
 			->useTerritoryQuery()
 				->filterByGame($this) // probably unnecessary

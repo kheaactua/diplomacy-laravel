@@ -50,7 +50,7 @@ class Turn extends BaseTurn {
 	public function addOrder(Order $l) {
 		if ($this->getStatus() !== 'open') {
 			// One exception, retreats
-print "$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'no') . "\n";
+$this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'no'));
 			if ($this->getStatus() === 'require_retreats' && $l instanceof Retreat) {
 				// Good
 			} else {
