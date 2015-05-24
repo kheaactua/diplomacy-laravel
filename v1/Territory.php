@@ -2,17 +2,10 @@
 
 namespace DiplomacyEngineRestApi\v1;
 
-use DiplomacyOrm\Match as MatchOrm;
-use DiplomacyOrm\MatchQuery;
-use DiplomacyOrm\Empire;
-use DiplomacyOrm\EmpireQuery;
-use DiplomacyOrm\Order;
-use DiplomacyOrm\TurnException;
-use DiplomacyOrm\OrderException;
-use DiplomacyOrm\InvalidOrderException;
-use DiplomacyOrm\ResolutionResult;
+use DiplomacyOrm\TerritoryTemplate;
+use DiplomacyOrm\TerritoryTemplateQuery;
 
-class Match extends RouteHandler {
+class Territory extends RouteHandler {
 
 	/**
 	 * I find my self doing this in almost every function, so
@@ -253,6 +246,38 @@ class Match extends RouteHandler {
 			$this->log->error('['. __METHOD__ .'] Caught exception: '. $e->getMessage());
 			$resp->fail(Response::UNKNONWN_EXCEPTION, 'An error occured, please try again later');
 		}
+
+		return $resp->__toArray();
+	}
+
+	/**
+	 * Fetch the list of territories owned by an empire.
+	 *
+	 * @param int $match_id Match ID
+	 * @param int $empire_id Empire ID issuing the order
+	 * @return array array(TerritoryTemplate, ...)
+	 */
+	public function doGetEmpireTerritoryMap($match_id, $empire_id) {
+		$match = $this->getMatch($match_id, $resp);
+		if (is_null($match)) return $resp;
+		$empire = $this->getEmpire($empire_id, $match, $resp);
+		if (is_null($empire)) return $resp;
+
+
+		$states = StateQuery::create()
+			->filterByTurn($match->getCurrentTurn())
+			->filterByOccupier($empire)
+			->find()
+		;
+
+		$territories = array();
+		foreach ($states as $state) {
+			$territories[] = array(
+				'territory' => $state->getTerritory()->__toArray(),
+				'unit' => $state->getUnit(),
+			);
+		}
+		$resp->data = $territories;
 
 		return $resp->__toArray();
 	}
