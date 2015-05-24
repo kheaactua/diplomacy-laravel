@@ -3,8 +3,6 @@
 namespace DiplomacyOrm;
 
 use DiplomacyOrm\Base\Game as BaseGame;
-use DiplomacyEngine\iEmpire;
-use DiplomacyEngine\Unit;
 use Propel\Runtime\ActiveQuery\Criteria;
 
 /**
@@ -52,7 +50,7 @@ class Game extends BaseGame {
 			$t = TerritoryTemplate::create($obj->name, $obj->type, false); // TODO fix supply center
 
 			$empire = EmpireQuery::create()->filterByGame($this)->filterByAbbr($obj->empire_start)->findOne();
-			if ($empire instanceof iEmpire) {
+			if ($empire instanceof Empire) {
 				$t->setInitialOccupation($empire, new Unit($obj->starting_forces));
 			}
 
