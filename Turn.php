@@ -374,16 +374,12 @@ print "Result $retreats\n";
 		// that territories are adjacent
 
 		// --------------------------
-		// Move & Retreat orders
+		// Retreat orders
 
-global $config; $config->system->db->useDebug(true);
 		$orders = OrderQuery::create()
 			->filterByTurn($this)
 			->filterByDescendantClass('%Retreat', Criteria::LIKE)
-			->_or()
-			->filterByDescendantClass('%Move', Criteria::LIKE)
 			->find();
-global $config; $config->system->db->useDebug(false);
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
 			print "Executing $o\n";
@@ -409,6 +405,28 @@ global $config; $config->system->db->useDebug(false);
 
 			$o->addToTranscript('Executed');
 		}
+
+		// --------------------------
+		// Move orders
+
+		$orders = OrderQuery::create()
+			->filterByTurn($this)
+			->filterByDescendantClass('%Move', Criteria::LIKE)
+			->find();
+		foreach ($orders as $o) {
+			$o = Order::downCast($o);
+			print "Executing $o\n";
+
+			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
+			$nextSourceState->setUnit('none'); // Keep occupying the territory, but the unit is moving
+
+			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
+			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnit());
+
+			$o->addToTranscript('Executed');
+		}
+
+
 
 		// --------------------------
 		// Disband orders
