@@ -264,9 +264,10 @@ class Match extends RouteHandler {
 	 *
 	 * @param int $match_id Match ID
 	 * @param int $empire_id Empire ID issuing the order
+	 * @param bool $include_neighbours Include the terrotories neighbours in the result.
 	 * @return array array(TerritoryTemplate, ...)
 	 */
-	public function doGetEmpireTerritoryMap($match_id, $empire_id) {
+	public function doGetEmpireTerritoryMap($match_id, $empire_id, $include_neighbours=false) {
 		$resp = new Response();
 		$match = $this->getMatch($match_id, $resp);
 		if (is_null($match)) return $resp;
@@ -282,10 +283,18 @@ class Match extends RouteHandler {
 
 		$territories = array();
 		foreach ($states as $state) {
-			$territories[] = array(
+			$arr = array(
 				'territory' => $state->getTerritory()->__toArray(),
 				'unit' => $state->getUnit(),
 			);
+
+			if ($include_neighbours) {
+				$neighbours = $state->getTerritory()->getNeighbours();
+				foreach ($neighbours as $n)
+					$arr['neighbours'][] = $n->__toArray();
+			}
+
+			$territories[] = $arr;
 		}
 		$resp->data = $territories;
 
@@ -296,9 +305,10 @@ class Match extends RouteHandler {
 	 * Fetch the list of territories owned by an empire.
 	 *
 	 * @param int $match_id Match ID
+	 * @param bool $include_neighbours Include neighbours in the territory output.  This will substancially increase the size of the data
 	 * @return array array(TerritoryTemplate, ...)
 	 */
-	public function doGetTerritories($match_id) {
+	public function doGetTerritories($match_id, $include_neighbours = false) {
 		$resp = new Response();
 		$match = $this->getMatch($match_id, $resp);
 		if (is_null($match)) return $resp;
@@ -321,6 +331,12 @@ class Match extends RouteHandler {
 
 			// Don't need, but might be nice to have for debugging/fixing
 			$arr['state_id'] = $state->getPrimaryKey();
+
+			if ($include_neighbours) {
+				$neighbours = $state->getTerritory()->getNeighbours();
+				foreach ($neighbours as $n)
+					$arr['neighbours'][] = $n->__toArray();
+			}
 
 			$territories[] = $arr;
 		}
