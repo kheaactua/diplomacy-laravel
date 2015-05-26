@@ -48,8 +48,12 @@ class State extends BaseState {
 		$this->setOccupier($occupier);
 		$this->setUnit($unit);
 
-		$unit->setState($this);
-		$unit->setMatch($this->getMatch());
+		// This is lazy, and might cause sneaky errors.  I SHOULD be sure when the units set
+		if (!($unit->getState() instanceof State))
+			$unit->setState($this);
+
+		if (!($unit->getMatch() instanceof Match))
+			$unit->setMatch($this->getMatch());
 	}
 
 	/**

@@ -68,6 +68,7 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 			if (count($states) == 1) {
 				if (!is_object($states[0]->getUnit()))
 					throw new \DiplomacyOrm\InvalidUnitException("It seems that there is no unit on territory ". $l->getSource()->getTerritory() . ", cannot issue order.");
+
 				$l->setUnitType($states[0]->getUnit()->getUnitType());
 			} else {
 				throw new \DiplomacyOrm\InvalidUnitException("Could not determine unit");
@@ -415,20 +416,30 @@ print "Result $retreats\n";
 		// --------------------------
 		// Move orders
 
-		$orders = OrderQuery::create()
+		$orders = MoveQuery::create()
 			->filterByTurn($this)
 			->filterByStatus('succeeded')
-			->filterByDescendantClass('%Move', Criteria::LIKE)
 			->find();
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
 			print "Executing $o\n";
 
+			// The unit we're going to move.
+			$unit = $o->getSource()->getUnit();
+
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setUnit(null); // Keep occupying the territory, but the unit is moving
 
 			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
-			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnit());
+			$nextDestState->setOccupation($o->getSource()->getOccupier(), $unit);
+
+			$unit->setState($nextDestState);
+			$unit->setLastState($nextSourceState);
+
+			if ($unit->getUnitType() == 'fleet' && $o->getSoure()->getTerritory()->getType() === 'water') {
+				$this->mlog->debug("Setting last water territory on $unit to ". $o->getSoure()->getTerritory() ." on there move to ". $nextDestState->getTerritory() . "");
+				$unit->setLastWater($o->getSoure()->getTerritory());
+			}
 
 			$o->addToTranscript('Executed');
 		}
