@@ -41,20 +41,21 @@ class TerritoryTemplate extends BaseTerritoryTemplate {
 		if ($this->isLand()) return 'L';
 		if ($this->isWater()) return 'W';
 		if ($this->isCoast()) return 'C';
+		return $this->getType();
 	}
 
 	public function __toString() {
-		return sprintf('(%1s)%s', $this->isLand()?'L':'W', $this->getName());
+		return sprintf('(%1s)%s', $this->shortType(), $this->getName());
 	}
 
 	/** @return bool Check if $this is land */
-	public function isLand() { return $this->type == TerritoryTemplateTableMap::COL_TYPE_LAND; }
+	public function isLand() { return $this->getType() == TerritoryTemplateTableMap::COL_TYPE_LAND; }
 
 	/** @return bool Check if $this is a coast */
-	public function isCoast() { return $this->type == TerritoryTemplateTableMap::COL_TYPE_COAST; }
+	public function isCoast() { return $this->getType() == TerritoryTemplateTableMap::COL_TYPE_COAST; }
 
 	/** @return bool Check if $this is water */
-	public function isWater() { return $this->type == TerritoryTemplateTableMap::COL_TYPE_WATER; }
+	public function isWater() { return $this->getType() == TerritoryTemplateTableMap::COL_TYPE_WATER; }
 
 	/**
 	 * Old system used constants, while propel uses enums, so overloading
