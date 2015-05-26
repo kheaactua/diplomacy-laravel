@@ -159,7 +159,7 @@
 
 		<column name="name" type="varchar" size="100" required="true" />
 
-		<column name="type" type="enum" valueSet="land,water" default="land" />
+		<column name="type" type="enum" valueSet="land,water,coast" default="land" />
 		<column name="is_supply"  type="char" size="1" default="0" description="True (1) if this territory is a supply base" />
 
 		<!-- Initial state -->
