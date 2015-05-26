@@ -77,7 +77,7 @@ class TerritoryTemplate extends BaseTerritoryTemplate {
 	 */
 	public function setInitialOccupation(Empire $empire, Unit $unit) {
 		parent::setInitialOccupier($empire);
-		parent::setInitialUnit($unit->enum());
+		parent::setInitialUnit($unit->getUnitType());
 	}
 
 	/**

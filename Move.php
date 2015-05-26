@@ -21,23 +21,21 @@ class Move extends BaseMove implements MultiTerritory {
 	// Static member variables with inheritance is irratating,
 	// so hardcoding these into getters instead of member variables
 	protected static $cmd = 'MOVE';
-	//protected function getFormat() { return '%empire% %cmd% %unit% %source%-%dest%'; }
-	//protected function getFormatRe() { return '/(MOVE)\s+(army|a|fleet|f)\s+([^-]+)-(.*)/'; }
-	protected static $format = '%empire% %cmd% %unit% %source%-%dest%';
-	protected static $formatRe = '/(MOVE)\s+(army|a|fleet|f)\s+([^-]+)-(.*)/';
+	//protected function getFormat() { return '%empire% %cmd% %source%-%dest%'; }
+	//protected function getFormatRe() { return '/(MOVE)\s+([^-]+)-(.*)/'; }
+	protected static $format = '%empire% %cmd% %source%-%dest%';
+	protected static $formatRe = '/(MOVE)\s+([^-]+)-(.*)/';
 
 	/**
 	 * Create unsaved (NS=No Save) order
 	 */
 	public static function createNS(
 		Empire  $empire,
-		Unit    $unit,
 		State   $source,
 		State   $dest
 	) {
 		$o = new Move;
 		$o->setEmpire($empire);
-		$o->setUnit($unit->enum());
 
 		$o->setSource($source);
 		$o->setDest($dest);
@@ -52,11 +50,12 @@ class Move extends BaseMove implements MultiTerritory {
 		$res = parent::Validate($full);
 		if (!$res) return $res;
 
-		if ($this->getSource()->getUnit() == 'fleet' && $this->getDest()->getTerritory()->getType() != 'water') {
+		// TODO Improve this validation to include coasts, and allow fleets to move to coasts
+		if ($this->getSource()->getUnit()->getUnitType() == 'fleet' && $this->getDest()->getTerritory()->getType() != 'water') {
 			$this->fail('Cannot move fleet out of water');
 			return false;
 		}
-		if ($this->getSource()->getUnit() == 'army' && $this->getDest()->getTerritory()->getType() != 'land') {
+		if ($this->getSource()->getUnit()->getUnitType() == 'army' && $this->getDest()->getTerritory()->getType() != 'land') {
 			$this->fail('Cannot move army into water');
 			return false;
 		}
@@ -64,8 +63,8 @@ class Move extends BaseMove implements MultiTerritory {
 
 	public function __toString() {
 		$str = $this->generateOrder(
-			array('empire', 'unit', 'cmd', 'source', 'dest'),
-			array("[". str_pad($this->getEmpire(),10)."]", new Unit($this->unit), self::$cmd, $this->getSource()->getTerritory(), $this->getDest()->getTerritory())
+			array('empire', 'cmd', 'source', 'dest'),
+			array("[". str_pad($this->getEmpire(),10)."]", self::$cmd, $this->getSource()->getTerritory(), $this->getDest()->getTerritory())
 		);
 
 		return $str;
@@ -77,31 +76,23 @@ class Move extends BaseMove implements MultiTerritory {
 	public static function interpretText($command, Match $match, Empire $empire) {
 		if (preg_match(self::getFormatRe(), $command, $matches)) {
 			// 1 = cmd
-			// 2 = unit
-			// 3 = source
-			// 4 = dest
-
-			// Match the unit
-			try {
-				$unit = new Unit($matches[2]);
-			} catch (DiplomacyOrm\InvalidUnitException $e) {
-				throw new InvalidOrderException("Could not match unit type {$matches[2]}");
-			}
+			// 2 = source
+			// 3 = dest
 
 			// Match the territories
 			try {
-				$source = $match->getGame()->lookupTerritory($matches[3], $match, $empire);
+				$source = $match->getGame()->lookupTerritory($matches[2], $match, $empire);
 			} catch (TerritoryMatchException $ex) {
 				throw new InvalidOrderException($ex->getMessage());
 			}
 
 			try {
-				$dest = $match->getGame()->lookupTerritory($matches[4], $match);
+				$dest = $match->getGame()->lookupTerritory($matches[3], $match);
 			} catch (TerritoryMatchException $ex) {
 				throw new InvalidOrderException($ex->getMessage());
 			}
 
-			return self::createNS($empire, $unit, $source, $dest);
+			return self::createNS($empire, $source, $dest);
 		}
 	}
 

@@ -34,7 +34,15 @@ class Match extends BaseMatch {
 		// Copy over the territories to our first state
 		$tts = $game->getGameTerritories();
 		foreach ($tts as $tt) {
-			$state = State::create($game, $m, $turn, $tt, $tt->getInitialOccupier(), new Unit($tt->getInitialUnit()));
+			$state = State::create($game, $m, $turn, $tt);
+
+			if ($tt->getInitialOccupier() instanceof Empire) {
+				$unit = new Unit($tt->getInitialUnit());
+ 				$unit->setMatch($m);
+				$unit->setState($state);
+
+				$state->setOccupation($tt->getInitialOccupier(), $unit);
+			}
 		}
 		$m->save();
 		return $m;
@@ -77,7 +85,12 @@ class Match extends BaseMatch {
 		$str .= str_pad('Territory', 30) . str_pad('Empire', 12) . str_pad('Unit', 10) . "\n";
 		$str .= str_pad('', 29, '-') . ' ' . str_pad('', 11, '-') . ' '. str_pad('', 10, '-') . "\n";
 		foreach ($states as $s) {
-			$str .= str_pad($s->getTerritory(), 30) . str_pad($s->getOccupier(), 12) . new Unit($s->getUnit()) . "\n";
+			if ($s->getOccupier() instanceof Empire && is_null($s->getUnit()))
+				$unit = 'Vacant';
+			else
+				$unit = $s->getUnit();
+			$unit = $s->getUnit() instanceof Unit ? $unit : '';
+			$str .= str_pad($s->getTerritory(), 30) . str_pad($s->getOccupier(), 12) . $unit . "\n";
 		}
 		return $str;
 	}

@@ -26,6 +26,10 @@ class State extends BaseState {
 		$o->setTurn($turn);
 		$o->setTerritory($territory);
 		if (!is_null($occupier)) {
+			// Not sure this is enough for the foreign keys
+			if (is_null($unit))
+				throw new InvalidUnitException('Must specify unit in occupation.');
+			$unit->setMatch($match);
 			$o->setOccupation($occupier, $unit);
 		}
 		$o->save();
@@ -43,19 +47,9 @@ class State extends BaseState {
 	public function setOccupation(Empire $occupier = null, $unit = null) {
 		$this->setOccupier($occupier);
 		$this->setUnit($unit);
-	}
 
-	public function setUnit($v) {
-		if (is_null($v))
-			$unit_str = 'none';
-		elseif ($v instanceof Unit)
-			$unit_str = $v->enum();
-		elseif (is_string($v))
-			$unit_str = $v;
-		else
-			trigger_error('Do not understand input to unit.');
-
-		parent::setUnit($unit_str);
+		$unit->setState($this);
+		$unit->setMatch($this->getMatch());
 	}
 
 	/**
