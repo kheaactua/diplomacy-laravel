@@ -67,11 +67,16 @@ class Game extends BaseGame {
 			foreach ($obj->neighbours as $nid) {
 				$n = $ts[$nid]; // again, using the spreadsheet IDs here
 				$t->addNeighbour($n);
+
+				// Now that neighbours are in, lets work on converting some of these
+				// 'land's to 'coast's
+				if ($t->getType() === 'land' && $n->getType() === 'water')
+					$t->setType('coast');
+
 			}
 			$t->save();
 		}
 		$this->save();
-		//return $ts;
 	}
 
 	/**
