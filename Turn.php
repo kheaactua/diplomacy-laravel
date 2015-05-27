@@ -908,8 +908,8 @@ class PlayerMap {
 						foreach ($arr1['orders'] as $o) { $o->fail("Lost in tie to current occupier $this->original_occupier (e2)"); $o->save(); }
 						$arr1['lost'] = true;
 					} else {
-						foreach ($arr1['orders'] as $o) { $o->fail("Lost in stalemate to ". $arr2['empire'] . " (e3)"); $o->save(); }
-						foreach ($arr2['orders'] as $o) { $o->fail("Lost in stalemate to ". $arr1['empire'] . " (e4)"); $o->save(); }
+						foreach ($arr1['orders'] as $o) { $o->fail("Lost in stalemate to ". $arr2['empire'] . ""); $o->save(); }
+						foreach ($arr2['orders'] as $o) { $o->fail("Lost in stalemate to ". $arr1['empire'] . ""); $o->save(); }
 						$arr1['lost'] = true;
 						$arr2['lost'] = true;
 					}
