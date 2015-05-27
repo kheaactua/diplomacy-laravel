@@ -20,7 +20,14 @@ use Propel\Runtime\ActiveQuery\Criteria;
  *
  */
 class Turn extends BaseTurn {
-	const dt = 4; // Timesteps per year.  Half of this is hard programmed in (Seasons)
+	public static $seasons = array(
+		0 => array('key' => 'spring',          'name' => 'Spring'),
+		1 => array('key' => 'spring_retreats', 'name' => 'Spring Retreats'),
+		2 => array('key' => 'fall',            'name' => 'Fall'),
+		3 => array('key' => 'fall_retreats',   'name' => 'Fall Retreats'),
+		4 => array('key' => 'spring_supply',   'name' => 'Spring Supply'),
+	);
+	const N_seasons = 5; // Timesteps per year.  Half of this is hard programmed in (Seasons)
 
 	protected $mlog;
 
@@ -120,15 +127,58 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 	public function processOrders() {
 		$this->validateOrders();
 		$this->removeOrdersFromAttackedTerritories();
-		$retreats = $this->resolveOrders();
 
-print "Result $retreats\n";
-		if ($retreats->getStatus() == ResolutionResult::SUCCESS) {
-			$result = $this->carryOutOrders();
-			return $result;
+		// Determine the winner of battles, fail all loser orders
+		$this->resolveOrders();
+
+		// Create the next turn
+		$nextTurn = $this->initiateNextTurn();
+
+		// Determine the required retreats.  All the loser units
+		// here will be removed as the State owner (in match_state
+		// and unit tables)
+		//
+		// Note, this is skipped in non fall/spring seasons
+		$retreat_results = $this->determineRequiredRetreats($nextTurn);
+
+// Debug
+print "[Turn:resolveOrders]\n";
+print $retreat_results;
+
+		// Determine what empire will have to disband or create units
+		//
+		// Note, this is skipped in any season except spring_supply
+		$supply_results  = $this->determineUnitSupplyChanges($nextTurn);
+
+		// Set the status as open for execution
+		$this->setStatus('ready-to-execute');
+
+
+		$result = new TurnResult($this, $nextTurn);
+		$result->setUnitSupply($supply_results);
+		$result->setRetreatResolver($retreat_results);
+
+		$this->carryOutOrders();
+		$this->getMatch()->next();
+		if ($this->getSeason() == 'spring' || $this->getSeason() == 'fall') {
+			if ($retreat_results->count()) {
+				// We have retreats
+			} else {
+				// We have no retreats, skip this season
+				$nextTurn->setStep($nextTurn->getStep()+1);
+			}
+		} elseif ($this->getSeason == 'fall_retreats') {
+			if ($supply_results->result() == UnitSupplyResolver::NO_ADJUSTMENT_REQUIRED) {
+				// No adjustment required, skip this season
+			} else {
+				// Adjustment required, skip this season
+				$nextTurn->setStep($nextTurn->getStep()+1);
+			}
 		} else {
-			return $retreats;
+			// Move into fall
 		}
+
+		return $result;
 	}
 
 	/** While orders should be validated before even being assigned
@@ -311,10 +361,12 @@ print "Result $retreats\n";
 					if ($o->getDest() == $state && $o->getSupporting() != $winner) {
 						$o->fail("Supported ". $o->getSupporting() . " in failed campaign against ". $state->getTerritory(). " that $winner won");
 					}
-				} elseif ($o instanceof Retreat) {
-					// Nothing to do
+				} elseif ($o instanceof Hold) {
+					if ($o->getSource() == $state && $o->getEmpire() != $winner) {
+						$o->fail("Holding ". $state->getTerritory(). " failed to $winner");
+					}
 				} else {
-					trigger_error("Not sure how to perform <". get_class($o) . ">$o");
+					//trigger_error("Not sure how to perform <". get_class($o) . ">$o");
 				}
 			}
 		} unset($state); // Precaution
@@ -327,10 +379,21 @@ print "Result $retreats\n";
 			print $map['tally'];
 			print "\n";
 		}
+	}
+
+	/**
+	 * Determine retreats
+	 */
+	public function determineRequiredRetreats(Turn $nextTurn) {
+		$retreats = new RetreatResolver($this);
+
+		// In spring and fall, determine the required retreats
+		if ($this->getSeason() !== 'spring' && $this->getSeason() !== 'fall')
+			return $retreats;
 
 		// Determine required retreats.  Go through the resolutions, and find all
 		// occupiers who are not the winners
-		$retreats = new ResolutionResult;
+		$states = $this->getStateOrderMap(false); // false to skip failed orders
 		foreach ($states as &$map) {
 			$state = $map['state'];
 			$winner = $map['tally']->winner();
@@ -343,39 +406,26 @@ print "Result $retreats\n";
 			}
 		} unset($state); // Precaution
 
-		$orders = $this->getOrders();
-		foreach ($orders as $o) {
-			$o = Order::downCast($o);
-			if ($o instanceof Retreat) {
-				$retreats->addRetreat($o);
-			}
-		}
+		// $orders = $this->getOrders();
+		// foreach ($orders as $o) {
+		// 	$o = Order::downCast($o);
+		// 	if ($o instanceof Retreat) {
+		// 		$retreats->addRetreat($o);
+		// 	}
+		// }
+
 		$retreats->resolveRetreats();
-
-		// Debug
-		print "[Turn:resolveOrders]\n";
-		print $retreats;
-
-		// TODO Try to "Resolve" some retreats (any units we can kill off?)
-
-		if ($retreats->getStatus() == ResolutionResult::RETREATS_REQUIRED) {
-			$this->setStatus('require_retreats');
-			$this->save();
-			return $retreats;
-		}
-
-		if ($retreats->getStatus() == ResolutionResult::SUCCESS) {
-			$this->setStatus('ready-to-execute');
-			$this->save();
-		}
 
 		return $retreats;
 	}
 
 	/**
-	 * Not sure what I intended for this function */
-	function resolveRetreats() {
-
+	  * Creates a UnitSupplyResolver, which then populates itself
+	  * pretty much, and returns it. */
+	public function determineUnitSupplyChanges() {
+		$us = new UnitSupplyResolver($this);
+		$us->run();
+		return $us;
 	}
 
 
@@ -494,10 +544,7 @@ print "Result $retreats\n";
 
 		$this->setStatus('complete');
 
-		// Move turn pointer to next turn
-		$this->getMatch()->next();
-
-		return new ResolutionResult;
+		return new RetreatResolver;
 	}
 
 	/**
@@ -555,17 +602,115 @@ print "Result $retreats\n";
 		}
 		print $str."\n";
 	}
-
-
 }
 
 /**
- * Small data structure to contain and export the required retreats data
+ * Object to figure out unit supply changes.
  */
-class ResolutionResult extends \ArrayObject {
+class UnitSupplyResolver {
+	protected $turn;
+
+	/**
+	 * Array that we build up to store the data */
+	protected $unit_supply;
+
+	/**
+	 * Flag (a count really) of whether adjustments will
+	 * be needed.  If this is zero, the system will likely
+	 * skip the entire supply season. */
+	protected $required_adjustments;
+
+	public function __construct(Turn $turn) {
+		$this->turn = $turn;
+		$this->unit_supply = array();
+		$this->required_adjustments = 0;
+	}
+
+	/**
+	 * Looks through the turn, and determines how many units an
+	 * empire has, how many supply territories they have, and
+	 * home many home supply territories they have.
+	 */
+	public function run() {
+		$ret = array();
+		$empires = $this->turn->getMatch()->getGame()->getEmpires();
+		foreach ($empires as $empire) {
+			$empire_ret = array();
+			$territories_owned = StateQuery::create()
+				->filterByTurn($this->turn)
+				->filterByOccupier($empire)
+				->count();
+			$territories_occupied_armies = StateQuery::create()
+				->filterByTurn($this->turn)
+				->filterByOccupier($empire)
+				->useUnitQuery()
+					->filterByUnitType('army')
+				->endUse()
+				->count();
+			$territories_occupied_fleets = StateQuery::create()
+				->filterByTurn($this->turn)
+				->filterByOccupier($empire)
+				->useUnitQuery()
+					->filterByUnitType('fleet')
+				->endUse()
+				->count();
+			$territories_supplies = StateQuery::create()
+				->filterByTurn($this->turn)
+				->filterByOccupier($empire)
+				->useTerritoryQuery()
+					->filterByIsSupply(1)
+				->endUse()
+				->count();
+
+			// territory home supplies?
+
+			// Adjustments required?
+			$adjustments_required = $territories_owned != $territories_supplies;
+
+			$empire_ret = array(
+				'empire'         => $empire->__toArray(),
+				'owned'          => $territories_owned,
+				'occupied-army'  => $territories_occupied_armies,
+				'occupied-fleet' => $territories_occupied_fleets,
+				'supplies'       => $territories_supplies,
+				'adjustment-required' => $adjustments_required,
+			);
+			$ret[] = $empire_ret;
+
+			if ($adjustments_required) $this->required_adjustments++;
+		}
+		$this->unit_supply = $ret;
+	}
+
+	/**
+	 * Serialize to JSON
+	 */
+	public function __toArray() {
+		return $this->unit_supply;
+	}
+
+	// /**
+	//  * Mostly a debug function.
+	//  */
+	// public function __toString() {
+	// 	$str = '';
+	// 	$str = 'Status: ' . $this->statusString() . "\n";
+	// 	foreach ($this->required_retreats as $arr) {
+	// 		$str .= "{$arr['territory']} {$arr['loser']} must retreat due to {$arr['winner']}'s victory.\n";
+	// 	}
+	// 	$str .= "\n";
+	// 	return $str;
+	// }
+}
+
+
+
+/**
+ * Object to resolve retreats.
+ */
+class RetreatResolver {
 	const RETREATS_REQUIRED = 1;
 	const SUCCESS = 2;
-	const UNINIT = -1;
 
 	protected $required_retreats;
 	protected $retreats;
@@ -575,20 +720,20 @@ class ResolutionResult extends \ArrayObject {
 		$this->retreats = array();
 	}
 
-	public function count() {
-		return count($this->required_retreats);
-	}
-	public function append($val) {
-		parent::append($val);
-	}
-
 	public function addRequiredRetreat(TerritoryTemplate $terr, Empire $loser, Empire $winner) {
 		$this->required_retreats[] = array('territory' => $terr, 'winner' => $winner, 'loser' => $loser);
 	}
 
-	public function addRetreat(Retreat $o) {
-		$this->retreats[] = $o;
+	/**
+	 * Returns the number of retreats required.
+	 */
+	public function count() {
+		return count($this->required_retreats);
 	}
+
+	// public function addRetreat(Retreat $o) {
+	// 	$this->retreats[] = $o;
+	// }
 
 	/**
 	 * Check to see if the required retreats have been satisfied.  If so,
@@ -618,18 +763,6 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Export to a simple array for the purposes of easily
-	 * serializing the structure into JSON
-	 */
-	public function __toArray() {
-		$ret = array(
-			'code' => $this->status,
-			'status' => $this->statusString(),
-			'requiredRetreats' => array(), // figure out structure later
-		);
 	}
 
 	public function getStatus() {
@@ -665,6 +798,66 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 		}
 		$str .= "\n";
 		return $str;
+	}
+}
+
+/**
+ * Result response we generate and send to the client after every resolution
+ */
+class TurnResult {
+	protected $retreats;
+	protected $unit_supply;
+
+	public function __construct(Turn $turn, Turn $nextTurn = null) {
+		$this->required_retreats = array();
+		$this->retreats = array();
+		$this->turn = $turn;
+		$this->nextTurn = $nextTurn;
+	}
+
+	public function setNextTurn(Turn $nextTurn) {
+		$this->setNextTurn($nextTurn);
+	}
+
+	public function setUnitSupply(UnitSupplyResolver $unit_supply) {
+		$this->unit_supply = $unit_supply;
+	}
+
+	public function setRetreatResolver(RetreatResolver $retreats) {
+		$this->retreats = $retreats;
+	}
+
+	/**
+	 * Export to a simple array for the purposes of easily
+	 * serializing the structure into JSON
+	 */
+	public function __toArray() {
+		$ret = array(
+			'turn-id'           => $this->turn->getPrimaryKey(),
+			'next-turn-id'      => $this->nextTurn->getPrimaryKey(),
+			'orders'            => array(),
+			'required-retreats' => array(),
+			'unit-supply'       => array(),
+		);
+
+		// Format the orders
+		foreach ($this->turn->getOrders() as $o) {
+			$o = Order::downCast($o);
+			$ret['orders'][] = $o->__toArray();
+		}
+
+		// Retreats.
+		foreach ($this->retreats as $r) {
+			$ret['required_retreats'] = array(
+				'territory' => $r['territory']->__toArray(),
+				'winner'    => $r['winner']->__toArray(),
+				'loser'     => $r['winner']->__toArray(),
+			);
+		}
+
+		// Retreats.
+		$ret['unit-supply'] = $this->unit_supply->__toArray();
+		return $ret;
 	}
 }
 
