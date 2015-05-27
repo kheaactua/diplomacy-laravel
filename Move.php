@@ -94,6 +94,7 @@ class Move extends BaseMove implements MultiTerritory {
 
 			return self::createNS($empire, $source, $dest);
 		}
+		throw new InvalidOrderException("Could not match order text $command");
 	}
 
 	public function getActiveStates() {
