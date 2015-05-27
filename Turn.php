@@ -20,7 +20,7 @@ use Propel\Runtime\ActiveQuery\Criteria;
  *
  */
 class Turn extends BaseTurn {
-	const dt = 2; // Timesteps per year.  Half of this is hard programmed in (Seasons)
+	const dt = 4; // Timesteps per year.  Half of this is hard programmed in (Seasons)
 
 	protected $mlog;
 
@@ -609,7 +609,7 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 	public function __toArray() {
 		$ret = array(
 			'code' => $this->status,
-			'status' => $this->statusStromg(),
+			'status' => $this->statusString(),
 			'requiredRetreats' => array(), // figure out structure later
 		);
 	}
