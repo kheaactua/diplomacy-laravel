@@ -105,7 +105,9 @@ global $config; $config->system->db->useDebug(true);
 			->join('State.Territory')
 			->useTerritoryQuery()
 				->filterByGame($this) // probably unnecessary
-				->filterByName($str.'%', Criteria::LIKE)
+					->filterByName($str.'%', Criteria::LIKE)
+				->_or()
+					->filterByPrimaryKey($str)
 			->endUse()
 		;
 

@@ -20,7 +20,41 @@ class Hold extends BaseHold
 
 	protected static $cmd = 'HOLD';
 	protected static $format = '%empire% %cmd% %source%';
-	protected static $formatRe = '/(HOLD)\s+([^-]+)-(.*)/';
+	protected static $formatRe = '/(HOLD)\s+([^-]+)/';
+
+	/**
+	 * Create unsaved (NS=No Save) order
+	 */
+	public static function createNS(
+		Empire  $empire,
+		State   $source
+	) {
+		$o = new Hold;
+		$o->setEmpire($empire);
+
+		$o->setSource($source);
+		return $o;
+	}
+
+	/**
+	 * Given some text, try to build a MOVE order.
+	 */
+	public static function interpretText($command, Match $match, Empire $empire) {
+		if (preg_match(self::getFormatRe(), $command, $matches)) {
+			// 1 = cmd
+			// 2 = source
+
+			// Match the territories
+			try {
+				$source = $match->getGame()->lookupTerritory($matches[2], $match, $empire);
+			} catch (TerritoryMatchException $ex) {
+				throw new InvalidOrderException($ex->getMessage());
+			}
+
+			return self::createNS($empire, $source);
+		}
+		throw new InvalidOrderException("Could not match order text $command");
+	}
 
 
 }
