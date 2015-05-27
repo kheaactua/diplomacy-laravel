@@ -418,6 +418,8 @@ print "Result $retreats\n";
 			// // is occupied.  BUT, if two armies retreat to the same place, they
 			// // are both disbanded.
 
+			// TODO Lagragian units
+
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setOccupation();
 
@@ -476,6 +478,8 @@ print "Result $retreats\n";
 
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setOccupation();
+
+			// TODO Lagragian units
 
 			$o->addToTranscript('Executed');
 		}

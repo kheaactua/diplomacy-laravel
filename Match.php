@@ -38,7 +38,7 @@ class Match extends BaseMatch {
 
 			if ($tt->getInitialOccupier() instanceof Empire) {
 				$unit = new Unit($tt->getInitialUnit());
- 				$unit->setMatch($m);
+				$unit->setTurn($m->getCurrentTurn());
 				$unit->setState($state);
 
 				$state->setOccupation($tt->getInitialOccupier(), $unit);
