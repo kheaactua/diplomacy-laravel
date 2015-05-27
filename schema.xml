@@ -6,7 +6,7 @@
 		<column name="game_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
 		<column name="name" type="varchar" size="150" required="true" />
 		<column name="start_year" type="integer" required="true" />
-		<column name="start_season" type="ENUM" valueSet="spring,fall" default="spring" />
+		<column name="start_season" type="ENUM" valueSet="spring,spring_retreat,fall,fall_retreat,spring_supply" default="spring" />
 	</table>
 
 	<table name="empire">
@@ -182,8 +182,6 @@
 		<column name="unit_type"     type="enum" valueSet="army,fleet,none,vacant" description="Occupying unit.  This table should never hold vacant/none units, but the constants are good to have for use elsewhere." />
 		<column name="state_id"      type="integer" required="true"    description="Current state this unit occupies" />
 		<column name="last_state_id" type="integer" required="false"   description="Last state this unit occupied.  Used for validating moves" />
-		<column name="last_water_territory_id" type="integer" required="false" description="Only used for fleets, this is used to prevent fleets from jumping coast-land-coast, like Panama" />
-
 		<foreign-key foreignTable="game_match" onDelete="CASCADE">
 			<reference local="match_id" foreign="match_id" />
 		</foreign-key>
