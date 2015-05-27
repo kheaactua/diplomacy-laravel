@@ -81,6 +81,18 @@ class Order extends BaseOrder {
 		return "Abstract order.";
 	}
 
+	/**
+	 * Export to JSON
+	 */
+	public function __toArray() {
+		$transcript = preg_split("/\n/", trim($this->getTranscript()));
+		return array(
+			'empire'  => $this->getEmpire()->__toArray(),
+			'command' => $this->__toString(),
+			'transcript' => $transcript,
+		);
+	}
+
 	/** Serialize the order into a string using a format */
 	protected function generateOrder($keys, $vals) {
 		array_walk($keys, function(&$e) { $e = "/%$e%/"; });

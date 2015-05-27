@@ -78,12 +78,26 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 	}
 
 	public function isSpring() {
-		return ($this->getMatch()->getGame()->getStartSeason()+$this->getStep()) % self::dt == 0;
+		return ($this->getMatch()->getGame()->getStartSeason()+$this->getStep()) % self::N_seasons == 0;
+	}
+
+	/**
+	 * English printout of the season
+	 */
+	public function getSeasonString() {
+		return self::$seasons[$this->getStep()%self::N_seasons]['name'];
+	}
+
+	/**
+	 * Season string
+	 */
+	public function getSeason() {
+		return self::$seasons[$this->getStep()%self::N_seasons]['key'];
 	}
 
 	public function __toString() {
-		$season = "[". $this->getPrimaryKey() . "]" . ($this->isSpring() ? 'Spring' : 'Fall');
-		$year = $this->getMatch()->getGame()->getStartYear() + floor(($this->getStep()/self::dt));
+		$season = "[". $this->getPrimaryKey() . "]" . $this->getSeasonString() . ',';
+		$year = $this->getMatch()->getGame()->getStartYear() + floor(($this->getStep()/self::N_seasons));
 
 		return "$season $year";
 	}

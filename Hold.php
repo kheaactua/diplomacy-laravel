@@ -56,7 +56,12 @@ class Hold extends BaseHold
 		throw new InvalidOrderException("Could not match order text $command");
 	}
 
-
+	/**
+	 * Export to JSON
+	 */
+	public function __toArray() {
+		return parent::__toArray();
+	}
 }
 
 // vim: ts=3 sw=3 noet :

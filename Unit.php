@@ -77,6 +77,39 @@ class Unit extends BaseUnit {
 	// public function isValid() {
 	// 	return $this->type != UnitTableMap::COL_UNIT_TYPE_NONE;
 	// }
+
+	/**
+	 * Mostly a debug function.
+	 * Print out all the units for a given turn.
+	 */
+	public static function printUnitTable(Turn $turn) {
+		$units = UnitQuery::create()
+			->filterByTurn($turn)
+			->find();
+
+		$str .= str_pad('Empire', 12) .    str_pad('Unit', 7) .     str_pad('Prev Territory', 30) . str_pad('Territory', 30) "\n";
+		$str .= str_pad('', 11, '-') .' '. str_pad('', 6, '-') .' '. str_pad('', 29, '-') . ' '    . str_pad('', 29, '-') . "\n";
+		foreach ($units as $unit) {
+			$str .= str_pad($unit->getEmpire(), 7);
+			$str .= str_pad($unit->getUnitType(), 6);
+
+			if (is_object($unit->getState())) {
+				$currentTerritory = $unit->getState()->getTerritory();
+			} else {
+				// Retreated..
+				$currentTerritory = '<stateless>';
+			}
+
+			if (is_object($unit->getLastState())) {
+				$currentTerritory = $unit->getLastState()->getTerritory();
+			} else {
+				// Retreated..
+				$lastTerritory = '<stateless>';
+			}
+			$str .= str_pad($currentTerritory, 30) . str_pad($lastTerritory) . "\n";
+		}
+		return $str;
+	}
 }
 
 // vim: ts=3 sw=3 noet :

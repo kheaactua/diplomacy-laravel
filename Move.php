@@ -100,6 +100,15 @@ class Move extends BaseMove implements MultiTerritory {
 	public function getActiveStates() {
 		return array($this->getSource(), $this->getDest());
 	}
+
+	/**
+	 * Export to JSON
+	 */
+	public function __toArray() {
+		$ret = parent::__toArray();
+		$ret['dest'] = $this->getDest()->getTerritory()->__toArray();
+		return $ret;
+	}
 }
 
 // vim: ts=3 sw=3 noet :
