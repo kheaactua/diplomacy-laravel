@@ -170,9 +170,9 @@ class Order extends BaseOrder {
 					return $sc::interpretText($command, $match, $empire);
 				}
 			}
-			trigger_error("Could not find order delegate for '$cmd'");
+			throw new InvalidOrderCommandException("Could not find order delegate for '$cmd'");
 		} else {
-			trigger_error("No order given in command: '$command'");
+			throw new InvalidOrderCommandException("No order given in command: '$command'");
 		}
 	}
 
@@ -191,6 +191,7 @@ class Order extends BaseOrder {
 }
 
 class OrderException extends \Exception { };
+class InvalidOrderCommandException extends OrderException { };
 class InvalidOrderException extends OrderException { };
 
 // vim: ts=3 sw=3 noet colorscheme=moss :
