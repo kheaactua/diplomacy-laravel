@@ -188,9 +188,6 @@
 		<foreign-key foreignTable="match_state" phpName="State" onDelete="CASCADE">
 			<reference local="state_id" foreign="state_id" />
 		</foreign-key>
-		<foreign-key foreignTable="territory_template" phpName="LastWaterTerritory" onDelete="CASCADE">
-			<reference local="last_water_territory_id" foreign="territory_id" />
-		</foreign-key>
 		<foreign-key foreignTable="match_state" phpName="LastState">
 			<reference local="last_state_id" foreign="state_id" />
 		</foreign-key>
