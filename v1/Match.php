@@ -25,7 +25,7 @@ class Match extends RouteHandler {
 	 * @param intent(INOUT) Response& Response
 	 * @return Match If no match was found, return null and fail the response appropriately
 	 */
-	protected function getMatch($match_id, &$response) {
+	protected function getMatch($match_id, Response &$resp) {
 		$match = MatchQuery::create()->findPk($match_id);
 		if (!($match instanceof MatchOrm)) {
 			$resp->fail(Response::INVALID_MATCH, "Invalid match $match_id");
@@ -43,7 +43,7 @@ class Match extends RouteHandler {
 	 * @param intent(INOUT) Response& Response
 	 * @return Match If no match was found, return null and fail the response appropriately
 	 */
-	protected function getEmpire($empire_id, $match, &$resp) {
+	protected function getEmpire($empire_id, $match, Response &$resp) {
 		$empire = EmpireQuery::create()->findPk($empire_id);
 		if (!($empire instanceof Empire)) {
 			$resp->fail(Response::INVALID_MATCH, "Invalid empire $empire_id");
