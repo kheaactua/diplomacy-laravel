@@ -6,7 +6,7 @@
 		<column name="game_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
 		<column name="name" type="varchar" size="150" required="true" />
 		<column name="start_year" type="integer" required="true" />
-		<column name="start_season" type="ENUM" valueSet="spring,spring_retreat,fall,fall_retreat,spring_supply" default="spring" />
+		<column name="start_season" type="ENUM" valueSet="spring,spring_retreat,fall,fall_retreat,spring_supply" default="spring" description="This is dumb, it should always be spring" />
 	</table>
 
 	<table name="empire">
@@ -56,7 +56,7 @@
 
 		<column name="step" type="integer" required="true" default="0" />
 
-		<column name="status" type="enum" valueSet="open,require_retreats,ready-to-execute,complete" default="open" />
+		<column name="status" type="enum" valueSet="open,ready-to-execute,complete" default="open" description="Status of a turn.  The original implementation wouldn't allow any orders without retreats, so there was a required_retreats state.  Now that retreats are done in separate turns, this status column has less importants." />
 
 		<column name="created_on" type="timestamp" />
 		<column name="updated_at" type="timestamp" />
