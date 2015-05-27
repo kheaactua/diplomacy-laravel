@@ -11,8 +11,9 @@ class Response {
 	const UNKNOWN_EXCEPTION=-2;
 	const INVALID_ROUTE=-100;
 	const INVALID_MATCH=-3;
-	const INVALID_EMPIRE=-5;
 	const INVALID_GAME=-4;
+	const INVALID_EMPIRE=-5;
+	const INVALID_ORDER=-6;
 	const TURN_ERROR=-50;
 
 	public $code;
