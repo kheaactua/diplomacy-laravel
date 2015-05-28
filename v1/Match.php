@@ -285,7 +285,7 @@ class Match extends RouteHandler {
 		foreach ($states as $state) {
 			$arr = array(
 				'territory' => $state->getTerritory()->__toArray(),
-				'unit' => $state->getUnit(),
+				'unit' => $state->getUnit()->__toString(),
 			);
 
 			if ($include_neighbours) {
