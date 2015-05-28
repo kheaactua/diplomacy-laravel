@@ -22,7 +22,6 @@ class State extends BaseState {
 	 */
 	public static function create(Game $game, Match $match, Turn $turn, TerritoryTemplate $territory, Empire $occupier = null, Unit $unit = null) {
 		$o = new State;
-		$o->setMatch($match);
 		$o->setTurn($turn);
 		$o->setTerritory($territory);
 		if (!is_null($occupier)) {
@@ -51,9 +50,6 @@ class State extends BaseState {
 		// This is lazy, and might cause sneaky errors.  I SHOULD be sure when the units set
 		if (!($unit->getState() instanceof State))
 			$unit->setState($this);
-
-		if (!($unit->getMatch() instanceof Match))
-			$unit->setMatch($this->getMatch());
 	}
 
 	/**

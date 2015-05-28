@@ -112,7 +112,7 @@ global $config; $config->system->db->useDebug(true);
 		;
 
 		$ts = $query->find();
-//$config->system->db->useDebug(false);
+$config->system->db->useDebug(false);
 		if (count($ts) == 1) {
 			return $ts[0];
 		} elseif (count($ts) > 1) {

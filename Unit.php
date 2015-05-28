@@ -23,7 +23,7 @@ use DiplomacyOrm\Map\UnitTableMap;
 class Unit extends BaseUnit {
 
 	public function __construct($type = null) {
-		$this->setUnitType($type);
+		if (!is_null($type)) $this->setUnitType($type);
 		parent::__construct();
 	}
 
@@ -87,26 +87,32 @@ class Unit extends BaseUnit {
 			->filterByTurn($turn)
 			->find();
 
-		$str .= str_pad('Empire', 12) .    str_pad('Unit', 7) .     str_pad('Prev Territory', 30) . str_pad('Territory', 30) "\n";
-		$str .= str_pad('', 11, '-') .' '. str_pad('', 6, '-') .' '. str_pad('', 29, '-') . ' '    . str_pad('', 29, '-') . "\n";
+		$str = '';
+		$str .= "State of units:\n";
+		if (count($units) == 0) {
+			$str .= "Warning! No units!\n";
+			return $str;
+		}
+		$str .= str_pad('Empire', 12) .    str_pad('Unit', 7) .     str_pad('Prev Territory', 30) . str_pad('Territory', 30) ."\n";
+		$str .= str_pad('', 11, '-') .' '. str_pad('', 6, '-') .' '. str_pad('', 29, '-') . ' '    . str_pad('', 29, '-')    ."\n";
 		foreach ($units as $unit) {
-			$str .= str_pad($unit->getEmpire(), 7);
+			$str .= str_pad($unit->getState()->getOccupier(), 12);
 			$str .= str_pad($unit->getUnitType(), 6);
 
 			if (is_object($unit->getState())) {
-				$currentTerritory = $unit->getState()->getTerritory();
+				$currentTerritory = $unit->getState()->getTerritory()->__toString();
 			} else {
 				// Retreated..
 				$currentTerritory = '<stateless>';
 			}
 
 			if (is_object($unit->getLastState())) {
-				$currentTerritory = $unit->getLastState()->getTerritory();
+				$lastTerritory = $unit->getLastState()->getTerritory()->__toString();
 			} else {
 				// Retreated..
-				$lastTerritory = '<stateless>';
+				$lastTerritory = '';
 			}
-			$str .= str_pad($currentTerritory, 30) . str_pad($lastTerritory) . "\n";
+			$str .= str_pad($lastTerritory, 31) . str_pad($currentTerritory, 30) . "\n";
 		}
 		return $str;
 	}

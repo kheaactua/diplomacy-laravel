@@ -158,7 +158,11 @@ print $retreat_results;
 		$result->setUnitSupply($supply_results);
 		$result->setRetreatResolver($retreat_results);
 
-		$this->carryOutOrders();
+		$this->carryOutOrders($nextTurn);
+
+		// Set the status as open for execution
+		$this->setStatus('complete');
+
 		$this->getMatch()->next();
 		if ($this->getSeason() == 'spring' || $this->getSeason() == 'fall') {
 			if ($retreat_results->count()) {
@@ -167,7 +171,7 @@ print $retreat_results;
 				// We have no retreats, skip this season
 				$nextTurn->setStep($nextTurn->getStep()+1);
 			}
-		} elseif ($this->getSeason == 'fall_retreats') {
+		} elseif ($this->getSeason() == 'fall_retreats') {
 			if ($supply_results->result() == UnitSupplyResolver::NO_ADJUSTMENT_REQUIRED) {
 				// No adjustment required, skip this season
 			} else {
@@ -177,6 +181,7 @@ print $retreat_results;
 		} else {
 			// Move into fall
 		}
+		$nextTurn->save();
 
 		return $result;
 	}
@@ -372,12 +377,12 @@ print $retreat_results;
 		} unset($state); // Precaution
 
 		// Debug
-		print "\n";
-		print "Resolutions before retreats:\n";
+		$str = "\n";
+		$str .= "Resolutions before retreats:\n";
 		foreach ($states as &$map) {
-			print $map['state']->getTerritory(). ", tally:\n";
-			print $map['tally'];
-			print "\n";
+			$str .= $map['state']->getTerritory(). ", tally:\n";
+			$str .= $map['tally'];
+			$str .= "\n";
 		}
 	}
 
@@ -431,14 +436,13 @@ print $retreat_results;
 
 	/**
 	 * Actually execute the orders.
+	 *
+	 * @param Turn $nextTurn This is the next turn, setup by initiateNextTurn
 	 */
-	function carryOutOrders() {
+	function carryOutOrders($nextTurn) {
 		if ($this->getStatus() != 'ready-to-execute') {
 			throw new InvalidStateToExecute("State is ". $this->getState() . ", must be 'ready-to-execute'");
 		}
-
-		// First, create the "next" turn, and clone the state
-		$nextTurn = $this->initiateNextTurn();
 
 		// Orders would already be validated by this point, so no need to ensure
 		// that territories are adjacent
@@ -542,8 +546,6 @@ print $retreat_results;
 		$this->save();
 		$nextTurn->save();
 
-		$this->setStatus('complete');
-
 		return new RetreatResolver;
 	}
 
@@ -554,7 +556,6 @@ print $retreat_results;
 	 **/
 	public function getTerritoryNextState(TerritoryTemplate $t) {
 		$nextState = StateQuery::create()
-			->filterByMatch($this->getMatch())
 			->filterByTurn($this->getMatch()->getNextTurn())
 			->filterByTerritory($t)
 			->findOne();
@@ -567,20 +568,41 @@ print $retreat_results;
 	 */
 	public function initiateNextTurn() {
 		global $config;
-//$config->system->db->useDebug(true);
+
 		$nextTurn = Turn::create($this->getMatch(), $this);
 		$sql = "INSERT INTO match_state "
-			. " (match_id, turn_id, territory_id, occupier_id, unit_id) "
-			." SELECT :match_id_static, :next_turn_id, territory_id, occupier_id, unit_id "
+			. " (turn_id, territory_id, occupier_id, unit_id) "
+			." SELECT :next_turn_id, territory_id, occupier_id, unit_id "
 			."  FROM match_state "
-			." WHERE match_id = :match_id AND turn_id = :current_turn_id ";
+			." WHERE turn_id = :current_turn_id ";
 		$stmt = $config->system->db->prepare($sql);
 		$stmt->execute(array(
-			':match_id_static' => $this->getMatch()->getPrimaryKey(),
 			':next_turn_id'    => $nextTurn->getPrimaryKey(),
-			':match_id'        => $this->getMatch()->getPrimaryKey(),
 			':current_turn_id' => $this->getPrimaryKey(),
 		));
+
+		// "Copy" the units from this turn to the next turn.
+		// I can't seem to find a fancy efficient way to do this
+		// due to primary keys and such.  (knowing the state_ids
+		// AND the unit types and IDs..)
+$config->system->db->useDebug(true);
+		$state_units = StateQuery::create()
+			->filterByTurn($this)
+			->filterByOccupierId(null, Criteria::ISNOTNULL)
+			->find();
+$config->system->db->useDebug(false);
+print "Found ". $state_units->count() . " units to copy\n";
+		foreach ($state_units as $su) {
+			$unit = new Unit();
+			$unit->setTurn($nextTurn);
+			$unit->setUnitId($su->getUnitId());
+
+			// This needs a query
+			$next_state = StateQuery::create()->filterByTurn($nextTurn)->filterByUnitId($su->getUnitId())->findOne(); // this has to be unique
+			$unit->setState($next_state);
+			$unit->setLastState($su);
+			$unit->save();
+		}
 
 		$nextTurn->reload();
 		$this->getMatch()->setNextTurn($nextTurn);
@@ -807,16 +829,23 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 class TurnResult {
 	protected $retreats;
 	protected $unit_supply;
+	protected $completedSeason;
 
 	public function __construct(Turn $turn, Turn $nextTurn = null) {
 		$this->required_retreats = array();
 		$this->retreats = array();
 		$this->turn = $turn;
 		$this->nextTurn = $nextTurn;
+		$this->completedSeason = $this->turn->getSeason();
+		$this->completedSeason = $this->turn->getSeason();
 	}
 
 	public function setNextTurn(Turn $nextTurn) {
 		$this->setNextTurn($nextTurn);
+	}
+
+	public function getNextSeason() {
+		return $this->nextTurn->getSeason();
 	}
 
 	public function setUnitSupply(UnitSupplyResolver $unit_supply) {
@@ -833,6 +862,8 @@ class TurnResult {
 	 */
 	public function __toArray() {
 		$ret = array(
+			'completed-season'  => $this->completedSeason,
+			'next-season'       => $this->getNextSeason(),
 			'turn-id'           => $this->turn->getPrimaryKey(),
 			'next-turn-id'      => $this->nextTurn->getPrimaryKey(),
 			'orders'            => array(),
