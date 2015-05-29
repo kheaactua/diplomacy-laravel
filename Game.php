@@ -105,12 +105,14 @@ global $config; $config->system->db->useDebug(true);
 			->join('State.Territory')
 			->useTerritoryQuery()
 				->filterByGame($this) // probably unnecessary
-				->filterByName($str.'%', Criteria::LIKE)
+					->filterByName($str.'%', Criteria::LIKE)
+				->_or()
+					->filterByPrimaryKey($str)
 			->endUse()
 		;
 
 		$ts = $query->find();
-//$config->system->db->useDebug(false);
+$config->system->db->useDebug(false);
 		if (count($ts) == 1) {
 			return $ts[0];
 		} elseif (count($ts) > 1) {

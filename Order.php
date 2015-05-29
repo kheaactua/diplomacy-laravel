@@ -81,6 +81,18 @@ class Order extends BaseOrder {
 		return "Abstract order.";
 	}
 
+	/**
+	 * Export to JSON
+	 */
+	public function __toArray() {
+		$transcript = preg_split("/\n/", trim($this->getTranscript()));
+		return array(
+			'empire'  => $this->getEmpire()->__toArray(),
+			'command' => $this->__toString(),
+			'transcript' => $transcript,
+		);
+	}
+
 	/** Serialize the order into a string using a format */
 	protected function generateOrder($keys, $vals) {
 		array_walk($keys, function(&$e) { $e = "/%$e%/"; });
@@ -170,9 +182,9 @@ class Order extends BaseOrder {
 					return $sc::interpretText($command, $match, $empire);
 				}
 			}
-			trigger_error("Could not find order delegate for '$cmd'");
+			throw new InvalidOrderCommandException("Could not find order delegate for '$cmd'");
 		} else {
-			trigger_error("No order given in command: '$command'");
+			throw new InvalidOrderCommandException("No order given in command: '$command'");
 		}
 	}
 
@@ -191,6 +203,7 @@ class Order extends BaseOrder {
 }
 
 class OrderException extends \Exception { };
+class InvalidOrderCommandException extends OrderException { };
 class InvalidOrderException extends OrderException { };
 
 // vim: ts=3 sw=3 noet colorscheme=moss :

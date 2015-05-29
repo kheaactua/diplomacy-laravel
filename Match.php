@@ -33,15 +33,19 @@ class Match extends BaseMatch {
 
 		// Copy over the territories to our first state
 		$tts = $game->getGameTerritories();
+		$unit_id = 0;
 		foreach ($tts as $tt) {
 			$state = State::create($game, $m, $turn, $tt);
 
 			if ($tt->getInitialOccupier() instanceof Empire) {
 				$unit = new Unit($tt->getInitialUnit());
- 				$unit->setMatch($m);
+				$unit->setTurn($m->getCurrentTurn());
+				$unit->setUnitId(++$unit_id);
 				$unit->setState($state);
+				$unit->save();
 
 				$state->setOccupation($tt->getInitialOccupier(), $unit);
+				$state->save();
 			}
 		}
 		$m->save();
@@ -53,16 +57,19 @@ class Match extends BaseMatch {
 	 */
 	public function next() {
 		if ($this->getCurrentTurn()->getStatus() != 'complete')
-			throw new TurnNotCompleteException("Current turn currently has a status of '". $this->getCurrentTurn()->getStatus() . "', cannot proceed.");
+			throw new TurnNotCompleteException("Current turn (". $this->getCurrentTurn()->getPrimaryKey() .") currently has a status of '". $this->getCurrentTurn()->getStatus() . "', cannot proceed.");
 
-		print "next turn: ". gettype($this->getNextTurn()) . "\n";
+//print "next turn: ". gettype($this->getNextTurn()) . "\n";
 		if (!($this->getNextTurn() instanceof Turn))
 			throw new TurnNotCompleteException("No next turn has been initialized");
+global $config;
+print "next turn: ". $this->getNextTurn() . ", {$config->ansi->red}step ". $this->getNextTurn()->getStep() ."{$config->ansi->clear}\n";
 
 
 		// else ...
 		$this->setCurrentTurn($this->getNextTurn());
 		$this->setNextTurn(null);
+		$this->save();
 	}
 
 	/*
@@ -80,7 +87,7 @@ class Match extends BaseMatch {
 		$str .= $this->getName().": ";
 		$str .= $this->getCurrentTurn() . "\n";
 
-		$states = StateQuery::create()->filterByMatch($this)->filterByTurn($this->getCurrentTurn());
+		$states = StateQuery::create()->filterByTurn($this->getCurrentTurn());
 
 		$str .= str_pad('Territory', 30) . str_pad('Empire', 12) . str_pad('Unit', 10) . "\n";
 		$str .= str_pad('', 29, '-') . ' ' . str_pad('', 11, '-') . ' '. str_pad('', 10, '-') . "\n";

@@ -78,6 +78,14 @@ class Retreat extends BaseRetreat
 		}
 	}
 
+	/**
+	 * Export to JSON
+	 */
+	public function __toArray() {
+		$ret = parent::__toArray();
+		$ret['dest'] = $this->getDest()->getTerritory()->__toArray();
+		return $ret;
+	}
 
 }
 

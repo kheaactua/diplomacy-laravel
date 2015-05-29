@@ -108,9 +108,20 @@ class Support extends BaseSupport implements MultiTerritory {
 
 			return self::createNS($empire, $ally, $source, $dest);
 		}
+		throw new InvalidOrderException("Could not match order text $command");
 	}
 	public function getActiveStates() {
 		return array($this->getSource(), $this->getDest());
+	}
+
+	/**
+	 * Export to JSON
+	 */
+	public function __toArray() {
+		$ret = parent::__toArray();
+		$ret['ally'] = $this->getAlly()->__toArray();
+		$ret['dest'] = $this->getDest()->getTerritory()->__toArray();
+		return $ret;
 	}
 }
 
