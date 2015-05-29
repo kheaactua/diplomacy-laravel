@@ -24,7 +24,7 @@ class Support extends BaseSupport implements MultiTerritory {
 	// protected function getFormatRe() { return '/(SUPPORT)\s+(\w+)\s+([^-]+)-(.*)/'; }
 	protected static $cmd = 'SUPPORT';
 	protected static $format = '%empire% %cmd% "%ally-state%" "%source%" "%dest%"';
-	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"\s+"([^"]+)" "([^"]+)"/';
+	protected static $formatRe = '/(SUPPORT)\s+"([^"]+)"\s+"([^"]+)" "([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order

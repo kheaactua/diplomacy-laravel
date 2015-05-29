@@ -21,7 +21,7 @@ class Supply extends BaseSupply {
 	// so hardcoding these into getters instead of member variables
 	protected static $cmd = 'SUPPLY';
 	protected static $format = '%empire% %cmd% "%dest%"';
-	protected static $formatRe = '/('. self::$cmd . ')\s+"([^"]+)"/';
+	protected static $formatRe = '/(SUPPLY)\s+"([^"]+)"/';
 
 	/**
 	 * Supply unsaved (NS=No Save) order

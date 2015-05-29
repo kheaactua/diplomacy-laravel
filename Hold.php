@@ -20,7 +20,7 @@ class Hold extends BaseHold
 
 	protected static $cmd = 'HOLD';
 	protected static $format = '%empire% %cmd% %source%';
-	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"/';
+	protected static $formatRe = '/(HOLD)\s+"([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order

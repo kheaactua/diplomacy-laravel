@@ -20,7 +20,7 @@ class Disband extends BaseDisband
 
 	protected static $cmd = 'DISBAND';
 	protected static $format = '%empire% %cmd% %source%';
-	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"/';
+	protected static $formatRe = '/(Disband)\s+"([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order

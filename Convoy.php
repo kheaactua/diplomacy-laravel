@@ -20,7 +20,7 @@ class Convoy extends BaseConvoy
 
 	protected static $cmd = 'CONVOY';
 	protected static $format = '%empire% %cmd% "%source%" "%troupe%" "%dest%"';
-	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"\s+"([^"]+)\s+"([^"]+)"/';
+	protected static $formatRe = '/(CONVOY)\s+"([^"]+)"\s+"([^"]+)\s+"([^"]+)"/';
 
 			return self::createNS($empire, $source, $troupState, $dest);
 	/**
