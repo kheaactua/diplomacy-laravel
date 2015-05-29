@@ -22,7 +22,6 @@ class Convoy extends BaseConvoy
 	protected static $format = '%empire% %cmd% "%source%" "%troupe%" "%dest%"';
 	protected static $formatRe = '/(CONVOY)\s+"([^"]+)"\s+"([^"]+)\s+"([^"]+)"/';
 
-			return self::createNS($empire, $source, $troupState, $dest);
 	/**
 	 * Create unsaved (NS=No Save) order
 	 */
