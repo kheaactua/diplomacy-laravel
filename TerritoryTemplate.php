@@ -99,10 +99,10 @@ class TerritoryTemplate extends BaseTerritoryTemplate {
 	 */
 	public function __toArray() {
 		return array(
-			'territory_id' => $this->getPrimaryKey(),
-			'name' => $this->getName(),
-			'type' => $this->getType(),
-			'is_supply' => $this->getIsSupply()
+			'territoryId' => $this->getPrimaryKey(),
+			'name'         => $this->getName(),
+			'type'         => $this->getType(),
+			'isSupply'    => $this->getIsSupply()
 		);
 	}
 

@@ -59,23 +59,29 @@ class Game extends BaseGame {
 			$this->addGameTerritory($t);
 			$t->save();
 			$ts[$obj->id] = $t; // Use the 'given' ID, rather than the new DB ID
-		}
+		} unset($obj); // Safety
 
 		// Second pass, set up neighbours
 		foreach ($objs as $obj) {
 			$t = $ts[$obj->id];
 			foreach ($obj->neighbours as $nid) {
-				$n = $ts[$nid]; // again, using the spreadsheet IDs here
+				$n = $ts[$nid]; // again, using the spreadsheet IDs (nid) here
+
+				// This doubles the size of the map, but makes it easier to query.
+				// Re-evaluate this later.  Maybe I could modify getNeighbours() to
+				// query territory_a or territory_b.
 				$t->addNeighbour($n);
+				$n->addNeighbour($t);
 
 				// Now that neighbours are in, lets work on converting some of these
 				// 'land's to 'coast's
 				if ($t->getType() === 'land' && $n->getType() === 'water')
 					$t->setType('coast');
 
-			}
+				$n->save();
+			} unset($n); unset($nid); // safety
 			$t->save();
-		}
+		} unset($obj); unset($t); // safety
 		$this->save();
 	}
 
@@ -96,7 +102,7 @@ class Game extends BaseGame {
 	 * @throws TerritoryMatchException
 	 */
 	public function lookupTerritory($str, Match $match, Empire $empire = null) {
-global $config; $config->system->db->useDebug(true);
+//global $config; $config->system->db->useDebug(true);
 		$query = StateQuery::create()
 			->filterByTurn($match->getCurrentTurn())
 			->_if($empire instanceof Empire)
@@ -112,7 +118,7 @@ global $config; $config->system->db->useDebug(true);
 		;
 
 		$ts = $query->find();
-$config->system->db->useDebug(false);
+//$config->system->db->useDebug(false);
 		if (count($ts) == 1) {
 			return $ts[0];
 		} elseif (count($ts) > 1) {
