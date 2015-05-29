@@ -128,58 +128,56 @@ class Turn extends BaseTurn {
 		// Determine the winner of battles, fail all loser orders
 		$this->resolveOrders();
 
-		// Create the next turn
-		$nextTurn = $this->initiateNextTurn();
-
 		// Determine the required retreats.  All the loser units
 		// here will be removed as the State owner (in match_state
 		// and unit tables)
 		//
 		// Note, this is skipped in non fall/spring seasons
-		$retreat_results = $this->determineRequiredRetreats($nextTurn);
+		$retreat_results = $this->determineRequiredRetreats();
 
 // Debug
 print "[Turn:resolveOrders]\n";
 print $retreat_results;
 
-// TODO, return here to output the broken state
+
+		$result = new TurnResult($this);
+		$result->setRetreatResolver($retreat_results);
+
+		if ($retreat_results->retreatsRequired()) {
+			// Work has to be done, we need
+			return $result;
+		}
 
 		// Determine what empire will have to disband or create units
 		//
 		// Note, this is skipped in any season except spring_supply
-		$supply_results  = $this->determineUnitSupplyChanges($nextTurn);
+		$supply_results = new UnitSupplyResolver($this);
+		$supply_results->run();
+		$result->setUnitSupply($supply_results);
+
+
+
+		//
+		// If we're here, we can carry out some orders!
 
 		// Set the status as open for execution
 		$this->setStatus('ready-to-execute');
 
+		// Create the next turn
+		$nextTurn = $this->initiateNextTurn();
 
-		$result = new TurnResult($this, $nextTurn);
-		$result->setUnitSupply($supply_results);
-		$result->setRetreatResolver($retreat_results);
+		if ($nextTurn->getSeason() == 'spring_supply' && !$supply_results->adjustmentsRequired()) {
+			$nextTurn->addToTranscript("No supply changes required, skipping supply season.");
+			$nextTurn->setStep($nextTurn->getStep()+1);
+		}
 
+		// Carry out the orders.
 		$this->carryOutOrders($nextTurn);
 
 		// Set the status as open for execution
 		$this->setStatus('complete');
 
 		$this->getMatch()->next();
-		if ($this->getSeason() == 'spring' || $this->getSeason() == 'fall') {
-			if ($retreat_results->count()) {
-				// We have retreats
-			} else {
-				// We have no retreats, skip this season
-				$nextTurn->setStep($nextTurn->getStep()+1);
-			}
-		} elseif ($this->getSeason() == 'fall_retreats') {
-			if ($supply_results->result() == UnitSupplyResolver::NO_ADJUSTMENT_REQUIRED) {
-				// No adjustment required, skip this season
-			} else {
-				// Adjustment required, skip this season
-				$nextTurn->setStep($nextTurn->getStep()+1);
-			}
-		} else {
-			// Move into fall
-		}
 		$nextTurn->save();
 
 		return $result;
@@ -388,7 +386,7 @@ print $retreat_results;
 	/**
 	 * Determine retreats
 	 */
-	public function determineRequiredRetreats(Turn $nextTurn) {
+	public function determineRequiredRetreats() {
 		$retreats = new RetreatResolver($this);
 
 		// In spring and fall, determine the required retreats
@@ -424,21 +422,14 @@ print $retreat_results;
 	}
 
 	/**
-	  * Creates a UnitSupplyResolver, which then populates itself
-	  * pretty much, and returns it. */
-	public function determineUnitSupplyChanges() {
-		$us = new UnitSupplyResolver($this);
-		$us->run();
-		return $us;
-	}
-
-
-	/**
 	 * Actually execute the orders.
 	 *
 	 * @param Turn $nextTurn This is the next turn, setup by initiateNextTurn
 	 */
 	function carryOutOrders($nextTurn) {
+		global $config;
+
+print "\n\n\n{$config->ansi->red}Carrying out orders{$config->ansi->clear}\n\n\n!\n";
 		if ($this->getStatus() != 'ready-to-execute') {
 			throw new InvalidStateToExecute("State is ". $this->getState() . ", must be 'ready-to-execute'");
 		}
@@ -453,10 +444,26 @@ print $retreat_results;
 			->filterByTurn($this)
 			->filterByStatus('succeeded')
 			->find();
-		foreach ($orders as $o) {
-			$o = Order::downCast($o);
-			print "Executing $o\n";
 
+		// First, check to see if two people have retreated to the same place
+		foreach ($orders as &$o1) {
+			foreach ($orders as &$o2) {
+				if ($o1 == $o2) continue;
+				if ($o1->failed() || $o2->failed()) continue;
+
+				if ($o1->getDest()->getTerritory() == $o2->getDest()->getTerritory()) {
+					$o1->fail("Retreated to same territory as ". $o2->getEmpire() . ", both units disbanded.");
+					$o2->fail("Retreated to same territory as ". $o1->getEmpire() . ", both units disbanded.");
+					$turn->addToTranscript(
+						"Disbanding a ". $o1->getEmpire() . " " . $o1->getUnitType() . " from ". $o1->getSource()->getTerritory()
+						. ", and ". $o2->getEmpire() . " " . $o2->getUnitType() . " from ". $o2->getSource()->getTerritory()
+						." for both retreating into ". $o1->getDest()->getTerritory() ."."
+					);
+				}
+			}
+		}
+
+		foreach ($orders as &$o) {
 			// It must move to a space to	which it could ordinarily move if unopposed
 			// by other units; that is, to an adjacent space suitable to an army
 			// or fleet, as the case may be. The unit may not retreat, however, to
@@ -466,17 +473,13 @@ print $retreat_results;
 			// "disbanded"; that is, its marker is removed from the board.
 			// http://diplom.org/Zine/F1995R/Loeb/rules.html
 
-			// // Presumably, the order has been checked to see if the destination
-			// // is occupied.  BUT, if two armies retreat to the same place, they
-			// // are both disbanded.
-
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setOccupation();
 
 			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
 			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnitType());
 
-			$o->addToTranscript('Executed');
+			$o->addToTranscript("Executed $o");
 		}
 
 		// --------------------------
@@ -487,9 +490,6 @@ print $retreat_results;
 			->filterByStatus('succeeded')
 			->find();
 		foreach ($orders as $o) {
-			$o = Order::downCast($o);
-			print "Executing $o\n";
-
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setUnitType('vacant'); // Keep occupying the territory with a vacant force
 
@@ -499,7 +499,7 @@ print $retreat_results;
 			$nextSourceState->save();
 			$nextDestState->save();
 
-			$o->addToTranscript('Executed');
+			$o->addToTranscript("Executed $o");
 		}
 
 
@@ -512,7 +512,6 @@ print $retreat_results;
 			->find();
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
-			print "Executing $o\n";
 
 			// This move can be over a convoy, whether that's valid will have
 			// been determined before now.
@@ -520,7 +519,7 @@ print $retreat_results;
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setOccupation();
 
-			$o->addToTranscript('Executed');
+			$o->addToTranscript("Executed $o");
 		}
 
 		// --------------------------
@@ -608,6 +607,10 @@ class UnitSupplyResolver {
 		$this->turn = $turn;
 		$this->unit_supply = array();
 		$this->required_adjustments = 0;
+	}
+
+	public function adjustmentsRequired() {
+		return $this->required_adjustments;
 	}
 
 	/**
@@ -710,6 +713,9 @@ class RetreatResolver {
 	public function count() {
 		return count($this->required_retreats);
 	}
+	public function retreatsRequired() {
+		return count($this->required_retreats)?true:false;
+	}
 
 	public function addRetreat(Retreat $o) {
 		$this->retreats[] = $o;
@@ -772,7 +778,7 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
 	 */
 	public function __toString() {
 		$str = '';
-		$str = 'Status: ' . $this->statusString() . "\n";
+		$str = 'Retreat Resolver: Status: ' . $this->statusString() . "\n";
 		foreach ($this->required_retreats as $arr) {
 			$str .= "{$arr['territory']} {$arr['loser']} must retreat due to {$arr['winner']}'s victory.\n";
 		}
@@ -785,25 +791,30 @@ print "$retreat satisfies the required retreat from {$rr['territory']} by {$rr['
  * Result response we generate and send to the client after every resolution
  */
 class TurnResult {
+	protected $required_retreats;
 	protected $retreats;
+	protected $season;
+	protected $turn;
 	protected $unit_supply;
-	protected $completedSeason;
 
-	public function __construct(Turn $turn, Turn $nextTurn = null) {
+
+	public function __construct(Turn $turn) {
+		global $MLOG;
+		$this->log               = $MLOG;
 		$this->required_retreats = array();
-		$this->retreats = array();
-		$this->turn = $turn;
-		$this->nextTurn = $nextTurn;
-		$this->completedSeason = $this->turn->getSeason();
-		$this->completedSeason = $this->turn->getSeason();
+		$this->retreats          = array();
+		$this->season            = $turn->getSeason();
+		$this->turn              = $turn;
+
+		$this->unit_supply = null;
 	}
 
 	public function setNextTurn(Turn $nextTurn) {
 		$this->setNextTurn($nextTurn);
 	}
 
-	public function getNextSeason() {
-		return $this->nextTurn->getSeason();
+	public function getSeason() {
+		return $this->turn->getSeason();
 	}
 
 	public function setUnitSupply(UnitSupplyResolver $unit_supply) {
@@ -814,25 +825,36 @@ class TurnResult {
 		$this->retreats = $retreats;
 	}
 
+	public function retreatsRequired() {
+		return count($this->retreats);
+	}
+
+	public function isSupplySeason() {
+		if (is_null($this->unit_supply)) return false;
+		return $this->unit_supply->adjustmentsRequired();
+	}
+
 	/**
 	 * Export to a simple array for the purposes of easily
 	 * serializing the structure into JSON
 	 */
 	public function __toArray() {
 		$ret = array(
-			'completed-season'  => $this->completedSeason,
-			'next-season'       => $this->getNextSeason(),
-			'turn-id'           => $this->turn->getPrimaryKey(),
-			'next-turn-id'      => $this->nextTurn->getPrimaryKey(),
+			'season'            => $this->season,
+			'turnId'            => $this->turn->getPrimaryKey(),
 			'orders'            => array(),
-			'required-retreats' => array(),
-			'unit-supply'       => array(),
+			'retreatsRequired'  => array(),
+			'unitSupply'        => array(),
 		);
 
 		// Format the orders
 		foreach ($this->turn->getOrders() as $o) {
 			$o = Order::downCast($o);
-			$ret['orders'][] = $o->__toArray();
+try {
+			//$ret['orders'][] = $o->__toArray();
+} catch (Exception $e) {
+$this->log->warning($e->getMessage());
+}
 		}
 
 		// Retreats.
@@ -847,6 +869,11 @@ class TurnResult {
 		// Retreats.
 		$ret['unit-supply'] = $this->unit_supply->__toArray();
 		return $ret;
+	}
+
+	public function __toString() {
+		$arr = $this->__toArray();
+		return print_r($arr, true);
 	}
 }
 
