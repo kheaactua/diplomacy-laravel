@@ -23,8 +23,8 @@ class Move extends BaseMove implements MultiTerritory {
 	protected static $cmd = 'MOVE';
 	//protected function getFormat() { return '%empire% %cmd% %source%-%dest%'; }
 	//protected function getFormatRe() { return '/(MOVE)\s+([^-]+)-(.*)/'; }
-	protected static $format = '%empire% %cmd% %source%-%dest%';
-	protected static $formatRe = '/(MOVE)\s+([^-]+)-(.*)/';
+	protected static $format = '%empire% %cmd% "%source%" "%dest%"';
+	protected static $formatRe = '/(MOVE)\s+"([^"]+)"\s+"(.*)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order

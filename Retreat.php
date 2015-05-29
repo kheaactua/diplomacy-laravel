@@ -20,7 +20,7 @@ class Retreat extends BaseRetreat
 
 	protected static $cmd = 'RETREAT';
 	protected static $format = '%empire% %cmd% %source%-%dest%';
-	protected static $formatRe = '/(RETREAT)\s+([^-]+)-(.*)/';
+	protected static $formatRe = '/(RETREAT)\s+"([^"]+)" "([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order

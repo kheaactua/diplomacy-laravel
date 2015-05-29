@@ -127,9 +127,9 @@ class Game extends BaseGame {
 				$match_names[] = $t->getTerritory()->getName();
 			throw new MultiTerritoryMatchException("Multiple matches for $str: '". join("', '", $match_names) . "'");
 		} else {
-			$str = "No match for $str";
-			if (!is_null($empire)) $str .= ". Purhaps $empire does not own $str?";
-			throw new NoTerritoryMatchException($str);
+			$msg = "No match for $str";
+			if (!is_null($empire)) $msg .= ". Purhaps $empire does not own $str?";
+			throw new NoTerritoryMatchException($msg);
 		}
 	}
 }
