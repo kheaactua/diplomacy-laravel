@@ -260,7 +260,7 @@ class Territory extends RouteHandler {
 		foreach ($states as $state) {
 			$territories[] = array(
 				'territory' => $state->getTerritory()->__toArray(),
-				'unit' => $state->getUnit(),
+				'unit' => $state->getUnitType(),
 			);
 		}
 		$resp->data = $territories;
