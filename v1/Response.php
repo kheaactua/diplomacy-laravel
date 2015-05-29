@@ -14,7 +14,10 @@ class Response {
 	const INVALID_GAME=-4;
 	const INVALID_EMPIRE=-5;
 	const INVALID_ORDER=-6;
+
 	const TURN_ERROR=-50;
+	const TURN_RETREATS_REQUIRED=-20;
+	const TURN_SUPPLY_SEASON=21;
 
 	public $code;
 	public $msg;

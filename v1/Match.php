@@ -146,6 +146,11 @@ class Match extends RouteHandler {
 				elseif ($result->getStatus() == ResolutionResult::SUCCESS)
 					$resp->msg  = "Orders successfully executed.  Turn is now closed.";
 
+				if ($result->retreatsRequired())
+					$resp->code = Response::TURN_RETREATS_REQUIRED;
+				elseif ($result->isSupplySeason())
+					$resp->code = Response::TURN_SUPPLY_SEASON;
+
 				$resp->data = $result;
 			}
 		} catch (Exception $ex) {
