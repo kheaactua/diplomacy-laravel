@@ -33,20 +33,8 @@ class Match extends BaseMatch {
 
 		// Copy over the territories to our first state
 		$tts = $game->getGameTerritories();
-		$unit_id = 0;
 		foreach ($tts as $tt) {
-			$state = State::create($game, $m, $turn, $tt);
-
-			if ($tt->getInitialOccupier() instanceof Empire) {
-				$unit = new Unit($tt->getInitialUnit());
-				$unit->setTurn($m->getCurrentTurn());
-				$unit->setUnitId(++$unit_id);
-				$unit->setState($state);
-				$unit->save();
-
-				$state->setOccupation($tt->getInitialOccupier(), $unit);
-				$state->save();
-			}
+			$state = State::create($game, $m, $turn, $tt, $tt->getInitialOccupier(), new Unit($tt->getInitialUnit()));
 		}
 		$m->save();
 		return $m;
@@ -92,12 +80,7 @@ print "next turn: ". $this->getNextTurn() . ", {$config->ansi->red}step ". $this
 		$str .= str_pad('Territory', 30) . str_pad('Empire', 12) . str_pad('Unit', 10) . "\n";
 		$str .= str_pad('', 29, '-') . ' ' . str_pad('', 11, '-') . ' '. str_pad('', 10, '-') . "\n";
 		foreach ($states as $s) {
-			if ($s->getOccupier() instanceof Empire && is_null($s->getUnit()))
-				$unit = 'Vacant';
-			else
-				$unit = $s->getUnit();
-			$unit = $s->getUnit() instanceof Unit ? $unit : '';
-			$str .= str_pad($s->getTerritory(), 30) . str_pad($s->getOccupier(), 12) . $unit . "\n";
+			$str .= str_pad($s->getTerritory(), 30) . str_pad($s->getOccupier(), 12) . new Unit($s->getUnitType()) . "\n";
 		}
 		return $str;
 	}

@@ -50,12 +50,11 @@ class Move extends BaseMove implements MultiTerritory {
 		$res = parent::Validate($full);
 		if (!$res) return $res;
 
-		// TODO Improve this validation to include coasts, and allow fleets to move to coasts
-		if ($this->getSource()->getUnit()->getUnitType() == 'fleet' && $this->getDest()->getTerritory()->getType() != 'water') {
+		if ($this->getSource()->getUnitType() == 'fleet' && $this->getDest()->getTerritory()->getType() == 'land') {
 			$this->fail('Cannot move fleet out of water');
 			return false;
 		}
-		if ($this->getSource()->getUnit()->getUnitType() == 'army' && $this->getDest()->getTerritory()->getType() != 'land') {
+		if ($this->getSource()->getUnitType() == 'army' && $this->getDest()->getTerritory()->getType() == 'water') {
 			$this->fail('Cannot move army into water');
 			return false;
 		}

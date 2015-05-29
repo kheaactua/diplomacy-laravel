@@ -28,7 +28,6 @@ class State extends BaseState {
 			// Not sure this is enough for the foreign keys
 			if (is_null($unit))
 				throw new InvalidUnitException('Must specify unit in occupation.');
-			$unit->setMatch($match);
 			$o->setOccupation($occupier, $unit);
 		}
 		$o->save();
@@ -40,16 +39,21 @@ class State extends BaseState {
 		if (is_null($this->getOccupier()))
 			return sprintf("[Turn: %s] Territory %s unoccupied", $this->getTurn(), $this->getTerritory());
 		else
-			return sprintf("[Turn: %s] Territory %s occupied by %s's %s", $this->getTurn(), $this->getTerritory(), $this->getOccupier(), $this->getUnit());
+			return sprintf("[Turn: %s] Territory %s occupied by %s's %s", $this->getTurn(), $this->getTerritory(), $this->getOccupier(), new Unit($this->getUnitType()));
 	}
 
 	public function setOccupation(Empire $occupier = null, $unit = null) {
 		$this->setOccupier($occupier);
-		$this->setUnit($unit);
-
-		// This is lazy, and might cause sneaky errors.  I SHOULD be sure when the units set
-		if (!($unit->getState() instanceof State))
-			$unit->setState($this);
+		if (is_string($unit))
+			// This was likely fed from the DB
+			$this->setUnitType($unit);
+		elseif ($unit instanceof Unit)
+			// We're specifying it
+			$this->setUnitType($unit->getUnitType());
+		elseif (is_null($occupier) && is_null($unit))
+			$this->setUnitType('none');
+		else
+			throw new InvalidUnitException("Invalid unit type specified");
 	}
 
 	/**

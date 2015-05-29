@@ -8,7 +8,6 @@ use DiplomacyOrm\Support;
 use DiplomacyOrm\Convoy;
 use DiplomacyOrm\Disband;
 use DiplomacyOrm\Hold;
-use DiplomacyEngine\Unit;
 
 /**
  * Trait to get around inheritance conflicting with static calls

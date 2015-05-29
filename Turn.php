@@ -21,13 +21,11 @@ use Propel\Runtime\ActiveQuery\Criteria;
  */
 class Turn extends BaseTurn {
 	public static $seasons = array(
-		0 => array('key' => 'spring',          'name' => 'Spring'),
-		1 => array('key' => 'spring_retreats', 'name' => 'Spring Retreats'),
-		2 => array('key' => 'fall',            'name' => 'Fall'),
-		3 => array('key' => 'fall_retreats',   'name' => 'Fall Retreats'),
-		4 => array('key' => 'spring_supply',   'name' => 'Spring Supply'),
+		array('key' => 'spring',          'name' => 'Spring'),
+		array('key' => 'fall',            'name' => 'Fall'),
+		array('key' => 'spring_supply',   'name' => 'Spring Supply'),
 	);
-	const N_seasons = 5; // Timesteps per year.  Half of this is hard programmed in (Seasons)
+	const N_seasons = 3; // Timesteps per year.  Half of this is hard programmed in (Seasons)
 
 	protected $mlog;
 
@@ -73,10 +71,10 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 				->find();
 
 			if (count($states) == 1) {
-				if (!is_object($states[0]->getUnit()))
-					throw new \DiplomacyOrm\InvalidUnitException("It seems that there is no unit on territory ". $l->getSource()->getTerritory() . ", cannot issue order.");
+				if ($states[0]->getUnitType() == 'none')
+					throw new \DiplomacyOrm\InvalidUnitException("It seems that there is no unit on ". $l->getSource()->getTerritory() . ", cannot issue order.");
 
-				$l->setUnitType($states[0]->getUnit()->getUnitType());
+				$l->setUnitType($states[0]->getUnitType());
 			} else {
 				throw new \DiplomacyOrm\InvalidUnitException("Could not determine unit");
 			}
@@ -114,7 +112,7 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 		$str .= str_pad('Territory', 30) . str_pad('Empire', 12) . str_pad('Unit', 10) . "\n";
 		$str .= str_pad('', 29, '-') . ' ' . str_pad('', 11, '-') . ' '. str_pad('', 10, '-') . "\n";
 		foreach ($state as $s) {
-			$str .= str_pad($s[0], 30) . str_pad($s[1], 12) . $s[0]->getUnit() . "\n";
+			$str .= str_pad($s[0], 30) . str_pad($s[1], 12) . $s[0]->getUnitType() . "\n";
 		}
 		return $str;
 	}
@@ -144,6 +142,8 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 // Debug
 print "[Turn:resolveOrders]\n";
 print $retreat_results;
+
+// TODO, return here to output the broken state
 
 		// Determine what empire will have to disband or create units
 		//
@@ -282,7 +282,7 @@ print $retreat_results;
 
 		foreach ($states as &$s1) {
 			$pkey = $s1->getTerritory()->getPrimaryKey(); // I don't think this matters, PK could be anything
-			$ret[$pkey] = array('state' => $s1, 'orders' => array(), 'tally' => new PlayerMap($s1->getOccupier()));
+			$ret[$pkey] = array('state' => $s1, 'orders' => array(), 'tally' => new PlayerMap($s1->getOccupier(), new Unit($s1->getUnitType())));
 
 			// Loop through all the states $s1
 			// 	Loop through the orders
@@ -411,13 +411,13 @@ print $retreat_results;
 			}
 		} unset($state); // Precaution
 
-		// $orders = $this->getOrders();
-		// foreach ($orders as $o) {
-		// 	$o = Order::downCast($o);
-		// 	if ($o instanceof Retreat) {
-		// 		$retreats->addRetreat($o);
-		// 	}
-		// }
+		$orders = $this->getOrders();
+		foreach ($orders as $o) {
+			$o = Order::downCast($o);
+			if ($o instanceof Retreat) {
+				$retreats->addRetreat($o);
+			}
+		}
 
 		$retreats->resolveRetreats();
 
@@ -450,10 +450,9 @@ print $retreat_results;
 		// --------------------------
 		// Retreat orders
 
-		$orders = OrderQuery::create()
+		$orders = RetreatQuery::create()
 			->filterByTurn($this)
 			->filterByStatus('succeeded')
-			->filterByDescendantClass('%Retreat', Criteria::LIKE)
 			->find();
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
@@ -472,13 +471,11 @@ print $retreat_results;
 			// // is occupied.  BUT, if two armies retreat to the same place, they
 			// // are both disbanded.
 
-			// TODO Lagragian units
-
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setOccupation();
 
 			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
-			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnit());
+			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnitType());
 
 			$o->addToTranscript('Executed');
 		}
@@ -494,22 +491,11 @@ print $retreat_results;
 			$o = Order::downCast($o);
 			print "Executing $o\n";
 
-			// The unit we're going to move.
-			$unit = $o->getSource()->getUnit();
-
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
-			$vUnit = new Unit();
-			$vUnit->setTurn($this);
-			$vUnit->setUnitId(Unit::generateNewId());
-			$vUnit->setUnitType('vacant');
-			$vUnit->setState($nextSourceState);
-			$nextSourceState->setUnit($vUnit); // Keep occupying the territory, but the unit is moving
+			$nextSourceState->setUnitType('vacant'); // Keep occupying the territory with a vacant force
 
 			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
-			$nextDestState->setOccupation($o->getSource()->getOccupier(), $unit);
-
-			$unit->setState($nextDestState);
-			$unit->setLastState($nextSourceState);
+			$nextDestState->setOccupation($o->getSource()->getOccupier(), $o->getSource()->getUnitType());
 
 			$nextSourceState->save();
 			$nextDestState->save();
@@ -522,9 +508,8 @@ print $retreat_results;
 		// --------------------------
 		// Disband orders
 
-		$orders = OrderQuery::create()->filterByTurn($this)
+		$orders = DisbandQuery::create()->filterByTurn($this)
 			->filterByStatus('succeeded')
-			->filterByDescendantClass('%Disband', Criteria::LIKE)
 			->find();
 		foreach ($orders as $o) {
 			$o = Order::downCast($o);
@@ -535,8 +520,6 @@ print $retreat_results;
 
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
 			$nextSourceState->setOccupation();
-
-			// TODO Lagragian units
 
 			$o->addToTranscript('Executed');
 		}
@@ -574,8 +557,8 @@ print $retreat_results;
 
 		$nextTurn = Turn::create($this->getMatch(), $this);
 		$sql = "INSERT INTO match_state "
-			. " (turn_id, territory_id, occupier_id, unit_id) "
-			." SELECT :next_turn_id, territory_id, occupier_id, unit_id "
+			. " (turn_id, territory_id, occupier_id, unit_type) "
+			." SELECT :next_turn_id, territory_id, occupier_id, unit_type "
 			."  FROM match_state "
 			." WHERE turn_id = :current_turn_id ";
 		$stmt = $config->system->db->prepare($sql);
@@ -583,30 +566,6 @@ print $retreat_results;
 			':next_turn_id'    => $nextTurn->getPrimaryKey(),
 			':current_turn_id' => $this->getPrimaryKey(),
 		));
-
-		// "Copy" the units from this turn to the next turn.
-		// I can't seem to find a fancy efficient way to do this
-		// due to primary keys and such.  (knowing the state_ids
-		// AND the unit types and IDs..)
-// $config->system->db->useDebug(true);
-		$state_units = StateQuery::create()
-			->filterByTurn($this)
-			->filterByOccupierId(null, Criteria::ISNOTNULL)
-			->find();
-// $config->system->db->useDebug(false);
-// print "Found ". $state_units->count() . " units to copy\n";
-		foreach ($state_units as $su) {
-			$unit = new Unit();
-			$unit->setTurn($nextTurn);
-			$unit->setUnitId($su->getUnitId()); // attempting to avoid a query
-			$unit->setUnitType($su->getUnit()->getUnitType()); // can't avoid query..
-
-			// This needs a query
-			$next_state = StateQuery::create()->filterByTurn($nextTurn)->filterByUnitId($su->getUnitId())->findOne(); // this has to be unique
-			$unit->setState($next_state);
-			$unit->setLastState($su);
-			$unit->save();
-		}
 
 		$nextTurn->reload();
 		$this->getMatch()->setNextTurn($nextTurn);
@@ -669,16 +628,12 @@ class UnitSupplyResolver {
 			$territories_occupied_armies = StateQuery::create()
 				->filterByTurn($this->turn)
 				->filterByOccupier($empire)
-				->useUnitQuery()
-					->filterByUnitType('army')
-				->endUse()
+				->filterByUnitType('army')
 				->count();
 			$territories_occupied_fleets = StateQuery::create()
 				->filterByTurn($this->turn)
 				->filterByOccupier($empire)
-				->useUnitQuery()
-					->filterByUnitType('fleet')
-				->endUse()
+				->filterByUnitType('fleet')
 				->count();
 			$territories_supplies = StateQuery::create()
 				->filterByTurn($this->turn)
@@ -757,9 +712,9 @@ class RetreatResolver {
 		return count($this->required_retreats);
 	}
 
-	// public function addRetreat(Retreat $o) {
-	// 	$this->retreats[] = $o;
-	// }
+	public function addRetreat(Retreat $o) {
+		$this->retreats[] = $o;
+	}
 
 	/**
 	 * Check to see if the required retreats have been satisfied.  If so,
@@ -905,13 +860,15 @@ class PlayerMap {
 	protected $map;
 	protected $winner;
 	protected $original_occupier;
-	public function __construct(Empire $default = null) {
+	public function __construct(Empire $default = null, Unit $unit = null) {
 		$this->map = array();
 
 		if (!is_null($default)) {
-//print "Adding default point to $default\n";
 			$this->original_occupier = $default;
-			$this->inc($default); // add starting 'defenders' point
+			if ($unit instanceof Unit && $unit->isForce()) {
+				// Add a point to the occupier if they have a unit here.
+				$this->inc($default); // add starting 'defenders' point
+			}
 			$this->winner = $default; // Set as default winner
 		} else {
 			$this->winner = null;
