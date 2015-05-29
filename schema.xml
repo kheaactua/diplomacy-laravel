@@ -97,7 +97,7 @@
 		<behavior name="concrete_inheritance">
 			<parameter name="extends" value="empire_order" />
 		</behavior>
-		<column name="dest_id" type="integer" description="Source destination of order" />
+		<column name="dest_id" type="integer" description="Destination of order" />
 		<foreign-key foreignTable="match_state" phpName="Dest" onDelete="CASCADE">
 			<reference local="dest_id" foreign="state_id" />
 		</foreign-key>
@@ -107,7 +107,7 @@
 		<behavior name="concrete_inheritance">
 			<parameter name="extends" value="empire_order" />
 		</behavior>
-		<column name="dest_id" type="integer" description="Source destination of order" />
+		<column name="dest_id" type="integer" description="Destination of order" />
 		<foreign-key foreignTable="match_state" phpName="Dest" onDelete="CASCADE">
 			<reference local="dest_id" foreign="state_id" />
 		</foreign-key>
@@ -117,10 +117,10 @@
 		<behavior name="concrete_inheritance">
 			<parameter name="extends" value="empire_order" />
 		</behavior>
-		<column name="ally_id" type="integer" description="Ally that your are supporting" />
+		<column name="ally_state_id" type="integer" description="State that you are supporting" />
 		<column name="dest_id" type="integer" description="Source destination of order" />
-		<foreign-key foreignTable="empire" phpName="Ally" onDelete="CASCADE">
-			<reference local="ally_id" foreign="empire_id" />
+		<foreign-key foreignTable="match_state" phpName="AllyState" onDelete="CASCADE">
+			<reference local="ally_state_id" foreign="state_id" />
 		</foreign-key>
 		<foreign-key foreignTable="match_state" phpName="Dest" onDelete="CASCADE">
 			<reference local="dest_id" foreign="state_id" />
@@ -131,10 +131,10 @@
 		<behavior name="concrete_inheritance">
 			<parameter name="extends" value="empire_order" />
 		</behavior>
-		<column name="middle_id" type="integer" description="Territory to convoy through" />
+		<column name="troupe_id" type="integer" description="Territory to convoy through" />
 		<column name="dest_id"   type="integer" description="Source destination of order" />
-		<foreign-key foreignTable="match_state" phpName="Middle" onDelete="CASCADE">
-			<reference local="middle_id" foreign="state_id" />
+		<foreign-key foreignTable="match_state" phpName="Troupe" onDelete="CASCADE">
+			<reference local="troupe_id" foreign="state_id" />
 		</foreign-key>
 		<foreign-key foreignTable="match_state" PhpName="Desta" onDelete="CASCADE">
 			<reference local="dest_id" foreign="state_id" />
@@ -148,6 +148,12 @@
 	</table>
 
 	<table name="order_disband" phpName="Disband">
+		<behavior name="concrete_inheritance">
+			<parameter name="extends" value="empire_order" />
+		</behavior>
+	</table>
+
+	<table name="order_supply" phpName="Supply">
 		<behavior name="concrete_inheritance">
 			<parameter name="extends" value="empire_order" />
 		</behavior>
