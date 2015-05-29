@@ -55,7 +55,6 @@ class Turn extends BaseTurn {
 	public function addOrder(Order $l) {
 		if ($this->getStatus() !== 'open') {
 			// One exception, retreats
-$this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'no'));
 			if ($this->getStatus() === 'require_retreats' && $l instanceof Retreat) {
 				// Good
 			} else {
@@ -76,7 +75,7 @@ $this->mlog->debug("$l instanceof Retreat = ". ($l instanceof Retreat ? 'yes':'n
 
 				$l->setUnitType($states[0]->getUnitType());
 			} else {
-				throw new \DiplomacyOrm\InvalidUnitException("Could not determine unit");
+				throw new \DiplomacyOrm\InvalidUnitException("Could not determine unit, ". $l->getEmpire() ." likely doesn't own ". $l->getSource()->getTerritory());
 			}
 		}
 		return parent::addOrder($l);
