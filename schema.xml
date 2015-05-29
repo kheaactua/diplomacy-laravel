@@ -181,17 +181,14 @@
 	</table>
 
 	<table name="unit" description="Lagragian perspective of the unit.  Keep track of every army/fleet in the game, and they associated states.  Also save the last state - this was the main driver for this, as it allows us to better limit moves.  Having this will likely expand future capabilities as well.  However, this introduces huge complications.">
-		<!-- <column name="turn_unit_id"  type="integer" required="true" primaryKey="true" description="Unit ID" /> -->
 		<column name="turn_id"       type="integer" required="true" primaryKey="true" />
 		<column name="unit_id"       type="integer" required="true" primaryKey="true" description="Unit ID, should be unique PER turn" />
 
-		<!-- <column name="empire_id"     type="integer" description="A little redundant, since the state knows this, but might help" /> -->
+		<column name="empire_id"     type="integer" description="A little redundant, since the state knows this, but might help" />
 		<column name="unit_type"     type="enum" valueSet="army,fleet,none,vacant" description="Occupying unit.  This table should never hold vacant/none units, but the constants are good to have for use elsewhere." />
 		<column name="state_id"      type="integer" required="true"    description="Current state this unit occupies" />
 		<column name="last_state_id" type="integer" required="false"   description="Last state this unit occupied.  Used for validating moves" />
-		<!-- <foreign&#45;key foreignTable="game_match" onDelete="CASCADE"> -->
-		<!-- 	<reference local="match_id" foreign="match_id" /> -->
-		<!-- </foreign&#45;key> -->
+
 		<foreign-key foreignTable="match_state" phpName="State" onDelete="CASCADE">
 			<reference local="state_id" foreign="state_id" />
 		</foreign-key>
