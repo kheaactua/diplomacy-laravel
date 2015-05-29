@@ -6,7 +6,7 @@
 		<column name="game_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
 		<column name="name" type="varchar" size="150" required="true" />
 		<column name="start_year" type="integer" required="true" />
-		<column name="start_season" type="ENUM" valueSet="spring,spring_retreat,fall,fall_retreat,spring_supply" default="spring" description="This is dumb, it should always be spring" />
+		<column name="start_season" type="ENUM" valueSet="spring,fall,spring_supply" default="spring" description="This is dumb, it should always be spring" />
 	</table>
 
 	<table name="empire">
@@ -56,7 +56,7 @@
 
 		<column name="step" type="integer" required="true" default="0" />
 
-		<column name="status" type="enum" valueSet="open,ready-to-execute,complete" default="open" description="Status of a turn.  The original implementation wouldn't allow any orders without retreats, so there was a required_retreats state.  Now that retreats are done in separate turns, this status column has less importants." />
+		<column name="status" type="enum" valueSet="open,require_retreats,ready-to-execute,complete" default="open" />
 
 		<column name="created_on" type="timestamp" />
 		<column name="updated_at" type="timestamp" />
@@ -180,34 +180,13 @@
 		</foreign-key>
 	</table>
 
-	<table name="unit" description="Lagragian perspective of the unit.  Keep track of every army/fleet in the game, and they associated states.  Also save the last state - this was the main driver for this, as it allows us to better limit moves.  Having this will likely expand future capabilities as well.  However, this introduces huge complications.">
-		<column name="turn_id"       type="integer" required="true" primaryKey="true" />
-		<column name="unit_id"       type="integer" required="true" primaryKey="true" description="Unit ID, should be unique PER turn" />
-
-		<column name="empire_id"     type="integer" description="A little redundant, since the state knows this, but might help" />
-		<column name="unit_type"     type="enum" valueSet="army,fleet,none,vacant" description="Occupying unit.  This table should never hold vacant/none units, but the constants are good to have for use elsewhere." />
-		<column name="state_id"      type="integer" required="true"    description="Current state this unit occupies" />
-		<column name="last_state_id" type="integer" required="false"   description="Last state this unit occupied.  Used for validating moves" />
-
-		<foreign-key foreignTable="match_state" phpName="State" onDelete="CASCADE">
-			<reference local="state_id" foreign="state_id" />
-		</foreign-key>
-		<foreign-key foreignTable="turn" onDelete="CASCADE">
-			<reference local="turn_id" foreign="turn_id" />
-		</foreign-key>
-		<foreign-key foreignTable="match_state" phpName="LastState" onDelete="cascade">
-			<reference local="last_state_id" foreign="state_id" />
-		</foreign-key>
-	</table>
-
-
 	<table name="match_state" phpName="State" description="Contains the match state for every turn">
 		<column name="state_id"     type="integer" required="true" primaryKey="true" autoIncrement="true" description="Needed for ease referencing" />
 		<column name="turn_id"      type="integer" required="true" />
 		<column name="territory_id" type="integer" required="true" />
 
 		<column name="occupier_id" type="integer" description="Occupying empire" />
-		<column name="unit_id" type="integer" description="Occupying unit. Null with an occupier means that the empire owns the territory, but the conquoring unit has moved on." />
+		<column name="unit_type" type="enum" valueSet="army,fleet,vacant,none" default="none" description="Occupying unit.  Only none if occpupier_id is empty." />
 
 		<foreign-key foreignTable="turn" onDelete="CASCADE">
 			<reference local="turn_id" foreign="turn_id" />
@@ -217,9 +196,6 @@
 		</foreign-key>
 		<foreign-key foreignTable="empire" phpName="Occupier" refPhpName="Occupier" onDelete="CASCADE">
 			<reference local="occupier_id" foreign="empire_id" />
-		</foreign-key>
-		<foreign-key foreignTable="unit" phpName="Unit" onDelete="Cascade">
-			<reference local="unit_id" foreign="unit_id" />
 		</foreign-key>
 	</table>
 
