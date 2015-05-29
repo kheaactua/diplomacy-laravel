@@ -116,6 +116,12 @@ class Unit extends BaseUnit {
 		}
 		return $str;
 	}
+
+	/**
+	 * Composite key is tricky, need to be able to generate IDs */
+	public static function generateNewId() {
+		return UnitQuery::create()->count();
+	}
 }
 
 // vim: ts=3 sw=3 noet :

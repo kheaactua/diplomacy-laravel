@@ -498,7 +498,12 @@ print $retreat_results;
 			$unit = $o->getSource()->getUnit();
 
 			$nextSourceState = $this->getTerritoryNextState($o->getSource()->getTerritory());
-			$nextSourceState->setUnit(null); // Keep occupying the territory, but the unit is moving
+			$vUnit = new Unit();
+			$vUnit->setTurn($this);
+			$vUnit->setUnitId(Unit::generateNewId());
+			$vUnit->setUnitType('vacant');
+			$vUnit->setState($nextSourceState);
+			$nextSourceState->setUnit($vUnit); // Keep occupying the territory, but the unit is moving
 
 			$nextDestState   = $this->getTerritoryNextState($o->getDest()->getTerritory());
 			$nextDestState->setOccupation($o->getSource()->getOccupier(), $unit);
@@ -506,10 +511,8 @@ print $retreat_results;
 			$unit->setState($nextDestState);
 			$unit->setLastState($nextSourceState);
 
-			if ($unit->getUnitType() == 'fleet' && $o->getSoure()->getTerritory()->getType() === 'water') {
-				$this->mlog->debug("Setting last water territory on $unit to ". $o->getSoure()->getTerritory() ." on there move to ". $nextDestState->getTerritory() . "");
-				$unit->setLastWater($o->getSoure()->getTerritory());
-			}
+			$nextSourceState->save();
+			$nextDestState->save();
 
 			$o->addToTranscript('Executed');
 		}
@@ -585,13 +588,13 @@ print $retreat_results;
 		// I can't seem to find a fancy efficient way to do this
 		// due to primary keys and such.  (knowing the state_ids
 		// AND the unit types and IDs..)
-$config->system->db->useDebug(true);
+// $config->system->db->useDebug(true);
 		$state_units = StateQuery::create()
 			->filterByTurn($this)
 			->filterByOccupierId(null, Criteria::ISNOTNULL)
 			->find();
-$config->system->db->useDebug(false);
-print "Found ". $state_units->count() . " units to copy\n";
+// $config->system->db->useDebug(false);
+// print "Found ". $state_units->count() . " units to copy\n";
 		foreach ($state_units as $su) {
 			$unit = new Unit();
 			$unit->setTurn($nextTurn);
