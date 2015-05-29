@@ -595,7 +595,8 @@ print "Found ". $state_units->count() . " units to copy\n";
 		foreach ($state_units as $su) {
 			$unit = new Unit();
 			$unit->setTurn($nextTurn);
-			$unit->setUnitId($su->getUnitId());
+			$unit->setUnitId($su->getUnitId()); // attempting to avoid a query
+			$unit->setUnitType($su->getUnit()->getUnitType()); // can't avoid query..
 
 			// This needs a query
 			$next_state = StateQuery::create()->filterByTurn($nextTurn)->filterByUnitId($su->getUnitId())->findOne(); // this has to be unique
