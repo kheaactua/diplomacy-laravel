@@ -9,10 +9,10 @@ use DiplomacyOrm\StateQuery;
 use DiplomacyOrm\Empire;
 use DiplomacyOrm\EmpireQuery;
 use DiplomacyOrm\Order;
-use DiplomacyOrm\TurnException;
 use DiplomacyOrm\OrderException;
-use DiplomacyOrm\InvalidOrderException;
 use DiplomacyOrm\ResolutionResult;
+use DiplomacyOrm\InvalidOrderException;
+use DiplomacyOrm\TurnException;
 
 class Match extends RouteHandler {
 
@@ -160,16 +160,16 @@ class Match extends RouteHandler {
 	 *
 	 * @param int $match_id Match ID
 	 * @param int $empire_id Empire ID issuing the order
-	 * @param string $order_str Order text
+	 * @param string $orderStr Order text
 	 * @return bool Whether the order was accepted
 	**/
-	public function doAddOrder($match_id, $empire_id, $order_str) {
+	public function doAddOrder($match_id, $empire_id, $orderStr) {
 		$this->mlog->debug('['. __METHOD__ .']');
 
 		$resp = new Response();
 
 		try {
-			$order = $this->validateOrder($match_id, $empire_id, $order_str, $resp, $match, $empire);
+			$order = $this->validateOrder($match_id, $empire_id, $orderStr, $resp, $match, $empire);
 
 			if ($order instanceof $order && !$order->failed()) {
 				$match->getCurrentTurn()->addOrder($order);
@@ -195,14 +195,14 @@ class Match extends RouteHandler {
 	 *
 	 * @param int $match_id Match
 	 * @param int $empire_id empire
-	 * @param string $order_str Order we're creating/validating
+	 * @param string $orderStr Order we're creating/validating
 	 * @param Response& $resp (intent(INOUT)) Response for this request
 	 * @param Match& $match (intent(OUT)) Will populate the match variable
 	 * @param Empire& $empire (intent(OUT)) Will populate the empire variable
 	 * @return Order
 	 * @throws Exception Passes along any exception it hits
 	 */
-	protected function validateOrder($match_id, $empire_id, $order_str, Response &$resp, &$match, &$empire) {
+	protected function validateOrder($match_id, $empire_id, $orderStr, Response &$resp, &$match, &$empire) {
 		$order = null;
 		do {
 			$match = $this->getMatch($match_id, $resp);
@@ -216,7 +216,7 @@ class Match extends RouteHandler {
 				$resp->fail(Response::INVALID_EMPIRE, "Invalid empire $empire_id");
 				break;
 			}
-			$order = Order::interpretText($order_str, $match, $empire); // Order is not yet saved
+			$order = Order::interpretText($orderStr, $match, $empire); // Order is not yet saved
 			$order->validate(false); // false for light validation
 			if ($order->failed()) {
 				$resp->fail(Response::INVALID_ORDER, $order->getTranscript());
@@ -235,16 +235,16 @@ class Match extends RouteHandler {
 	 *
 	 * @param int $match_id Match ID
 	 * @param int $empire_id Empire ID issuing the order
-	 * @param string $order_str Order text
+	 * @param string $orderStr Order text
 	 * @return bool Whether the order was accepted
 	**/
-	public function doValidate($match_id, $empire_id, $order_str) {
+	public function doValidate($match_id, $empire_id, $orderStr) {
 		$this->mlog->debug('['. __METHOD__ .']');
 
 		$resp = new Response();
 
 		try {
-			$order = $this->validateOrder($match_id, $empire_id, $order_str, $resp, $match, $empire);
+			$order = $this->validateOrder($match_id, $empire_id, $orderStr, $resp, $match, $empire);
 
 			if ($order instanceof $order)
 				$resp->data=!$order->failed();
