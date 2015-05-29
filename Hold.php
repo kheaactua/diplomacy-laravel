@@ -20,7 +20,7 @@ class Hold extends BaseHold
 
 	protected static $cmd = 'HOLD';
 	protected static $format = '%empire% %cmd% %source%';
-	protected static $formatRe = '/(HOLD)\s+([^-]+)/';
+	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order
@@ -37,7 +37,7 @@ class Hold extends BaseHold
 	}
 
 	/**
-	 * Given some text, try to build a MOVE order.
+	 * Given some text, try to build a HOLD order.
 	 */
 	public static function interpretText($command, Match $match, Empire $empire) {
 		if (preg_match(self::getFormatRe(), $command, $matches)) {

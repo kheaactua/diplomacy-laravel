@@ -168,7 +168,7 @@ class Order extends BaseOrder {
 
 		// Collect all the order types
 		// Slow, might want to hard code this...
-		$subclasses = array('Move', 'Support', 'Hold', 'Disband', 'Convoy', 'Retreat');
+		$subclasses = array('Move', 'Support', 'Hold', 'Disband', 'Convoy', 'Retreat', 'Supply');
 
 		// First word should always be the order
 		if (preg_match('/^(\w+)\s/', $command, $matches)) {
