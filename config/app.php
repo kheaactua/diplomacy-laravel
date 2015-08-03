@@ -144,6 +144,9 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
+	Allboo\PropelLaravel\GeneratorServiceProvider::class,
+	Allboo\PropelLaravel\RuntimeServiceProvider::class,
+
     ],
 
     /*
