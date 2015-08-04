@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\GameQuery as BaseGameQuery;
+use App\Models\Base\GameQuery as BaseGameQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'game' table.

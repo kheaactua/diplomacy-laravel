@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\Disband as BaseDisband;
+use App\Models\Base\Disband as BaseDisband;
 
 /**
  * Skeleton subclass for representing a row from the 'order_disband' table.

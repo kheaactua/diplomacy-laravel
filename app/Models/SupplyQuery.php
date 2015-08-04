@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\SupplyQuery as BaseSupplyQuery;
+use App\Models\Base\SupplyQuery as BaseSupplyQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_supply' table.

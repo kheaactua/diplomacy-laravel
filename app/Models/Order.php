@@ -1,13 +1,13 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\Order as BaseOrder;
-use DiplomacyOrm\Move;
-use DiplomacyOrm\Support;
-use DiplomacyOrm\Convoy;
-use DiplomacyOrm\Disband;
-use DiplomacyOrm\Hold;
+use App\Models\Base\Order as BaseOrder;
+use App\Models\Move;
+use App\Models\Support;
+use App\Models\Convoy;
+use App\Models\Disband;
+use App\Models\Hold;
 
 /**
  * Trait to get around inheritance conflicting with static calls

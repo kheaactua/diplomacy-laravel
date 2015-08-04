@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\Support as BaseSupport;
+use App\Models\Base\Support as BaseSupport;
 use DiplomacyEngine\MultiTerritory;
 
 /**

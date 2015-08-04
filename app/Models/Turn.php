@@ -1,11 +1,11 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\Turn as BaseTurn;
-use DiplomacyOrm\Move;
-use DiplomacyOrm\Support;
-use DiplomacyOrm\InvalidUnitException;
+use App\Models\Base\Turn as BaseTurn;
+use App\Models\Move;
+use App\Models\Support;
+use App\Models\InvalidUnitException;
 
 use Propel\Runtime\ActiveQuery\Criteria;
 

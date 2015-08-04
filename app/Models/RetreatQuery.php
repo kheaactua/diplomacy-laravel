@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\RetreatQuery as BaseRetreatQuery;
+use App\Models\Base\RetreatQuery as BaseRetreatQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_retreat' table.

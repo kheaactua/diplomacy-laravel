@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\TerritoryMap as BaseTerritoryMap;
+use App\Models\Base\TerritoryMap as BaseTerritoryMap;
 
 /**
  * Skeleton subclass for representing a row from the 'territory_map' table.

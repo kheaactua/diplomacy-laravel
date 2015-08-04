@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm\Models;
+namespace App\Models;
 
-use DiplomacyOrm\Models\Base\User as BaseUser;
+use App\Models\Base\User as BaseUser;
 
 /**
  * Skeleton subclass for representing a row from the 'user' table.

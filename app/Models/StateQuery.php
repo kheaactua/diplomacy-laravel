@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\StateQuery as BaseStateQuery;
+use App\Models\Base\StateQuery as BaseStateQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'match_state' table.

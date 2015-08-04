@@ -28,7 +28,7 @@ return [
     |
     */
 
-    'model' => DiplomacyOrm\Models\User::class,
+    'model' => \App\Models\User::class,
 
     /*
     |--------------------------------------------------------------------------

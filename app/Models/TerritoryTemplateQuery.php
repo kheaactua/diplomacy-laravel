@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\TerritoryTemplateQuery as BaseTerritoryTemplateQuery;
+use App\Models\Base\TerritoryTemplateQuery as BaseTerritoryTemplateQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'territory_template' table.

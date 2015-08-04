@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\Move as BaseMove;
+use App\Models\Base\Move as BaseMove;
 use DiplomacyEngine\MultiTerritory;
 
 /**

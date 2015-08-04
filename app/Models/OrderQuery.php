@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\OrderQuery as BaseOrderQuery;
+use App\Models\Base\OrderQuery as BaseOrderQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'empire_order' table.

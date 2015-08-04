@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\TurnQuery as BaseTurnQuery;
+use App\Models\Base\TurnQuery as BaseTurnQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'turn' table.

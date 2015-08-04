@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\MatchQuery as BaseMatchQuery;
+use App\Models\Base\MatchQuery as BaseMatchQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'match' table.

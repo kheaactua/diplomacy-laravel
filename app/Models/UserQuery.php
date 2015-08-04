@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm\Models;
+namespace App\Models;
 
-use DiplomacyOrm\Models\Base\UserQuery as BaseUserQuery;
+use App\Models\Base\UserQuery as BaseUserQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'user' table.

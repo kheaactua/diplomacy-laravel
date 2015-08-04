@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models;
 
-use DiplomacyOrm\Base\HoldQuery as BaseHoldQuery;
+use App\Models\Base\HoldQuery as BaseHoldQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_hold' table.
