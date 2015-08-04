@@ -8,7 +8,8 @@
     "require": {
         "php": ">=5.5.9",
         "laravel/framework": "5.1.*",
-        "scif/propel-laravel": "dev-develop"
+        "scif/propel-laravel": "dev-develop",
+        "barryvdh/laravel-debugbar": "^2.0@dev"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
