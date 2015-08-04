@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<database name="diplomacy" defaultIdMethod="native" namespace="App\Models">
+<database name="mysql" defaultIdMethod="native" namespace="App\Models">
 
 	<table name="user">
 		<column name="user_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
