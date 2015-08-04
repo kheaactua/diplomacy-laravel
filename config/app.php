@@ -39,7 +39,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'EST',
 
     /*
     |--------------------------------------------------------------------------
@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'locale' => 'en',
+    'locale' => 'en-CA',
 
     /*
     |--------------------------------------------------------------------------
@@ -144,6 +144,8 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
+
+	/* Recommended by laravel-propel */
 	Allboo\PropelLaravel\GeneratorServiceProvider::class,
 	Allboo\PropelLaravel\RuntimeServiceProvider::class,
 
@@ -198,3 +200,5 @@ return [
     ],
 
 ];
+
+// vim: ts=3 sw=3 noet ffs=unix :
