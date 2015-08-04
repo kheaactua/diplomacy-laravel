@@ -65,3 +65,5 @@ return [
     ],
 
 ];
+
+// vim: ts=3 sw=3 noet ffs=unix :

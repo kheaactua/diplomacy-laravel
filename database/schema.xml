@@ -6,6 +6,7 @@
 		<column name="user_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
 		<column name="email" type="varchar" size="255" required="true" />
 		<column name="handle" type="varchar" size="100" required="true" />
+		<column name="password" type="varchar" size="100" required="true" />
 		<column name="name" type="varchar" size="100" required="true" />
 		<column name="first_name" type="varchar" size="40" required="false" />
 		<column name="last_name" type="varchar" size="60" required="false" />
