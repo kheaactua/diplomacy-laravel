@@ -1,6 +1,6 @@
 {
-    "name": "laravel/laravel",
-    "description": "The Laravel Framework.",
+    "name": "matt/diplomacy-laravel",
+    "description": "Diplomacy order resolving engine",
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "type": "project",
@@ -49,6 +49,6 @@
     },
     "config": {
         "preferred-install": "dist"
-    }
-    "minimum-stability": "alpha",
+    },
+    "minimum-stability": "alpha"
 }
