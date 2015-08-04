@@ -3,8 +3,8 @@ return [
     'propel' => [
         'general' => [
             # The name of your project.
-            'project' => 'My App',
-            'version' => '1.0',
+            'project' => 'Diplomacy',
+            'version' => '0.5.0',
         ],
         'exclude_tables' => [
             # some_table name as value, you feel free to use wildcard, for example
