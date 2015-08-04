@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Move as BaseMove;
-use DiplomacyEngine\MultiTerritory;
+use App\Models\MultiTerritory;
 
 /**
  * Skeleton subclass for representing a row from the 'order_move' table.

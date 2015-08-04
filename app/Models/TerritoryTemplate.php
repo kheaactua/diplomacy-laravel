@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Base\TerritoryTemplate as BaseTerritoryTemplate;
 use App\Models\Map\TerritoryTemplateTableMap;
-use DiplomacyEngine\iTerritory;
 
 /** Terrotory type, should use propel constants.
  * @deprecated */

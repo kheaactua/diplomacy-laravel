@@ -10,6 +10,14 @@ use App\Models\Disband;
 use App\Models\Hold;
 
 /**
+ * Easy way to see if this order has a
+ * destination or not.
+ */
+interface MultiTerritory  {}
+interface SingleTerritory  {}
+
+
+/**
  * Trait to get around inheritance conflicting with static calls
  */
 trait StaticOrderMethods {
@@ -205,4 +213,4 @@ class OrderException extends \Exception { };
 class InvalidOrderCommandException extends OrderException { };
 class InvalidOrderException extends OrderException { };
 
-// vim: ts=3 sw=3 noet colorscheme=moss :
+// vim: ts=3 sw=3 noet ffs=unix :
