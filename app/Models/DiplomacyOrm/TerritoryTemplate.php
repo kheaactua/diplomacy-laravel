@@ -1,9 +1,9 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\TerritoryTemplate as BaseTerritoryTemplate;
-use DiplomacyOrm\Map\TerritoryTemplateTableMap;
+use App\Models\DiplomacyOrm\Base\TerritoryTemplate as BaseTerritoryTemplate;
+use App\Models\DiplomacyOrm\Map\TerritoryTemplateTableMap;
 use DiplomacyEngine\iTerritory;
 
 /** Terrotory type, should use propel constants.

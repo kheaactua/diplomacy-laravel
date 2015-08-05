@@ -1,9 +1,9 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Empire as BaseEmpire;
-use DiplomacyOrm\Map\StateTableMap;
+use App\Models\DiplomacyOrm\Base\Empire as BaseEmpire;
+use App\Models\DiplomacyOrm\Map\StateTableMap;
 
 /**
  * Skeleton subclass for representing a row from the 'empire' table.

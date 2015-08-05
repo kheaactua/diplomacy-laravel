@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Supply as BaseSupply;
+use App\Models\DiplomacyOrm\Base\Supply as BaseSupply;
 
 /**
  * Skeleton subclass for representing a row from the 'order_supply' table.

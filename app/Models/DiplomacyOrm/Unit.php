@@ -1,9 +1,9 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Unit as BaseUnit;
-use DiplomacyOrm\Map\UnitTableMap;
+use App\Models\DiplomacyOrm\Base\Unit as BaseUnit;
+use App\Models\DiplomacyOrm\Map\UnitTableMap;
 
 /**
  * Skeleton subclass for representing a row from the 'unit' table.

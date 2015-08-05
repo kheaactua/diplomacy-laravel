@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Disband as BaseDisband;
+use App\Models\DiplomacyOrm\Base\Disband as BaseDisband;
 
 /**
  * Skeleton subclass for representing a row from the 'order_disband' table.
@@ -20,7 +20,7 @@ class Disband extends BaseDisband
 
 	protected static $cmd = 'DISBAND';
 	protected static $format = '%empire% %cmd% %source%';
-	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"/';
+	protected static $formatRe = '/(Disband)\s+"([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order

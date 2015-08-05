@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Retreat as BaseRetreat;
+use App\Models\DiplomacyOrm\Base\Retreat as BaseRetreat;
 
 /**
  * Skeleton subclass for representing a row from the 'order_retreat' table.

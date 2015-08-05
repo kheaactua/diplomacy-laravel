@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Convoy as BaseConvoy;
+use App\Models\DiplomacyOrm\Base\Convoy as BaseConvoy;
 
 /**
  * Skeleton subclass for representing a row from the 'order_convoy' table.
@@ -20,9 +20,8 @@ class Convoy extends BaseConvoy
 
 	protected static $cmd = 'CONVOY';
 	protected static $format = '%empire% %cmd% "%source%" "%troupe%" "%dest%"';
-	protected static $formatRe = '/('. self::$cmd .')\s+"([^"]+)"\s+"([^"]+)\s+"([^"]+)"/';
+	protected static $formatRe = '/(CONVOY)\s+"([^"]+)"\s+"([^"]+)\s+"([^"]+)"/';
 
-			return self::createNS($empire, $source, $troupState, $dest);
 	/**
 	 * Create unsaved (NS=No Save) order
 	 */

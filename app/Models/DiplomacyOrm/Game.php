@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Game as BaseGame;
+use App\Models\DiplomacyOrm\Base\Game as BaseGame;
 use Propel\Runtime\ActiveQuery\Criteria;
 
 /**
