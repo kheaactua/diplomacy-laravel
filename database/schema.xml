@@ -1,6 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<database name="diplomacy" defaultIdMethod="native" namespace="DiplomacyOrm">
+<database name="mysql" defaultIdMethod="native" namespace="App\Models\DiplomacyOrm">
+
+	<table name="user" namespace="App\Models">
+		<column name="user_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+		<column name="email" type="varchar" size="255" required="true" />
+		<column name="handle" type="varchar" size="100" required="true" />
+		<column name="password" type="varchar" size="100" required="true" />
+		<column name="name" type="varchar" size="100" required="true" />
+		<column name="first_name" type="varchar" size="40" required="false" />
+		<column name="last_name" type="varchar" size="60" required="false" />
+		<column name="perms" type="array" description="Role tags.  Not to be confused with membership status.  Roles will primarily be used for website administrators..  e.g. admin|storemng|editor|volunteer" />
+		<column name="gender" type="enum" valueSet="nan, male, female" default="nan" />
+		<column name="birthday" type="date" required="false" />
+
+		<column name="created_on" type="timestamp" />
+		<column name="updated_at" type="timestamp" />
+		<behavior name="timestampable">
+			<parameter name="create_column" value="created_on" />
+			<parameter name="update_column" value="updated_at" />
+		</behavior>
+
+		<vendor type="mysql">
+			<parameter name="Engine" value="InnoDB"/>
+		</vendor>
+	</table>
 
 	<table name="game">
 		<column name="game_id" type="integer" required="true" primaryKey="true" autoIncrement="true" />

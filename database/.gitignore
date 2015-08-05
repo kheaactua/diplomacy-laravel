@@ -1,1 +1,3 @@
 *.sqlite
+sqldb.map
+diplomacy.sql
