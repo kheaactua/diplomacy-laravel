@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\State as BaseState;
+use App\Models\DiplomacyOrm\Base\State as BaseState;
 
 /**
  * Skeleton subclass for representing a row from the 'match_state' table.

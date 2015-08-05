@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\DisbandQuery as BaseDisbandQuery;
+use App\Models\DiplomacyOrm\Base\DisbandQuery as BaseDisbandQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_disband' table.

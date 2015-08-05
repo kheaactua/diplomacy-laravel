@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Match as BaseMatch;
+use App\Models\DiplomacyOrm\Base\Match as BaseMatch;
 
 /**
  * Skeleton subclass for representing a row from the 'match' table.

@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\SupportQuery as BaseSupportQuery;
+use App\Models\DiplomacyOrm\Base\SupportQuery as BaseSupportQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_support' table.

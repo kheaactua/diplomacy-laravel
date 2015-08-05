@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\MoveQuery as BaseMoveQuery;
+use App\Models\DiplomacyOrm\Base\MoveQuery as BaseMoveQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_move' table.

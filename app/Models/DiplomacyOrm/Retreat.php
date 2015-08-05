@@ -1,12 +1,11 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Move as BaseMove;
-use DiplomacyEngine\MultiTerritory;
+use App\Models\DiplomacyOrm\Base\Retreat as BaseRetreat;
 
 /**
- * Skeleton subclass for representing a row from the 'order_move' table.
+ * Skeleton subclass for representing a row from the 'order_retreat' table.
  *
  *
  *
@@ -15,49 +14,29 @@ use DiplomacyEngine\MultiTerritory;
  * long as it does not already exist in the output directory.
  *
  */
-class Move extends BaseMove implements MultiTerritory {
+class Retreat extends BaseRetreat
+{
 	use StaticOrderMethods;
 
-	// Static member variables with inheritance is irratating,
-	// so hardcoding these into getters instead of member variables
-	protected static $cmd = 'MOVE';
-	//protected function getFormat() { return '%empire% %cmd% %source%-%dest%'; }
-	//protected function getFormatRe() { return '/(MOVE)\s+([^-]+)-(.*)/'; }
-	protected static $format = '%empire% %cmd% "%source%" "%dest%"';
-	protected static $formatRe = '/(MOVE)\s+"([^"]+)"\s+"(.*)"/';
+	protected static $cmd = 'RETREAT';
+	protected static $format = '%empire% %cmd% %source%-%dest%';
+	protected static $formatRe = '/(RETREAT)\s+"([^"]+)" "([^"]+)"/';
 
 	/**
 	 * Create unsaved (NS=No Save) order
 	 */
 	public static function createNS(
 		Empire  $empire,
+		//Unit    $support_unit,
 		State   $source,
 		State   $dest
 	) {
-		$o = new Move;
+		$o = new Retreat;
 		$o->setEmpire($empire);
 
 		$o->setSource($source);
 		$o->setDest($dest);
 		return $o;
-	}
-
-	/**
-	 * Validate the order.
-	 * @return bool Whether the order is good
-	 */
-	public function validate($full = true) {
-		$res = parent::Validate($full);
-		if (!$res) return $res;
-
-		if ($this->getSource()->getUnitType() == 'fleet' && $this->getDest()->getTerritory()->getType() == 'land') {
-			$this->fail('Cannot move fleet out of water');
-			return false;
-		}
-		if ($this->getSource()->getUnitType() == 'army' && $this->getDest()->getTerritory()->getType() == 'water') {
-			$this->fail('Cannot move army into water');
-			return false;
-		}
 	}
 
 	public function __toString() {
@@ -69,8 +48,12 @@ class Move extends BaseMove implements MultiTerritory {
 		return $str;
 	}
 
+	public function getActiveStates() {
+		return array($this->getSource(), $this->getDest());
+	}
+
 	/**
-	 * Given some text, try to build a MOVE order.
+	 * Given some text, try to build a RETREAT order.
 	 */
 	public static function interpretText($command, Match $match, Empire $empire) {
 		if (preg_match(self::getFormatRe(), $command, $matches)) {
@@ -86,18 +69,13 @@ class Move extends BaseMove implements MultiTerritory {
 			}
 
 			try {
-				$dest = $match->getGame()->lookupTerritory($matches[3], $match);
+				$dest = $match->getGame()->lookupTerritory($matches[3]);
 			} catch (TerritoryMatchException $ex) {
 				throw new InvalidOrderException($ex->getMessage());
 			}
 
 			return self::createNS($empire, $source, $dest);
 		}
-		throw new InvalidOrderException("Could not match order text $command");
-	}
-
-	public function getActiveStates() {
-		return array($this->getSource(), $this->getDest());
 	}
 
 	/**
@@ -108,6 +86,7 @@ class Move extends BaseMove implements MultiTerritory {
 		$ret['dest'] = $this->getDest()->getTerritory()->__toArray();
 		return $ret;
 	}
+
 }
 
 // vim: ts=3 sw=3 noet :

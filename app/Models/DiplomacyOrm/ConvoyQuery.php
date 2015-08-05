@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\ConvoyQuery as BaseConvoyQuery;
+use App\Models\DiplomacyOrm\Base\ConvoyQuery as BaseConvoyQuery;
 
 /**
  * Skeleton subclass for performing query and update operations on the 'order_convoy' table.

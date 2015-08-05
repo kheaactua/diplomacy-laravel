@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Convoy as BaseConvoy;
+use App\Models\DiplomacyOrm\Base\Convoy as BaseConvoy;
 
 /**
  * Skeleton subclass for representing a row from the 'order_convoy' table.

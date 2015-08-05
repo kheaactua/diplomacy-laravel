@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Base\Hold as BaseHold;
+use App\Models\DiplomacyOrm\Base\Hold as BaseHold;
 
 /**
  * Skeleton subclass for representing a row from the 'order_hold' table.

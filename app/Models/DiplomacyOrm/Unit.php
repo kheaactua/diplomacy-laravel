@@ -1,8 +1,8 @@
 <?php
 
-namespace DiplomacyOrm;
+namespace App\Models\DiplomacyOrm;
 
-use DiplomacyOrm\Map\StateTableMap;
+use App\Models\DiplomacyOrm\Map\StateTableMap;
 
 /**
  * Tiny class for unit type.  This object is 'state'less, and is just used as a
